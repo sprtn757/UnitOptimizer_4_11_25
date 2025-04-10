@@ -1,9 +1,8 @@
 import type { Express, Request, Response } from "express";
-import type { FileArray, File as MulterFile } from "multer";
 
 // Extended Request type with files property from multer
 interface RequestWithFiles extends Request {
-  files?: MulterFile[];
+  files?: Express.Multer.File[];
 }
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
@@ -88,7 +87,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Upload files
-  app.post('/api/upload', upload.array('files', 10), async (req: Request, res: Response) => {
+  app.post('/api/upload', upload.array('files', 10), async (req: RequestWithFiles, res: Response) => {
     try {
       if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
         return res.status(400).json({ message: 'No files uploaded' });
@@ -96,7 +95,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const uploadedFiles = [];
       
-      for (const file of req.files as Express.Multer.File[]) {
+      for (const file of req.files) {
         const fileSchema = insertFileSchema.safeParse({
           name: file.originalname,
           type: file.mimetype,
