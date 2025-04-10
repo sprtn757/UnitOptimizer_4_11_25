@@ -13,17 +13,19 @@
   
   html, body {
     height: 100vh;
-    max-height: var(--app-height);
+    height: var(--app-height);
     margin: 0;
     padding: 0;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     @apply font-sans antialiased bg-background text-foreground;
   }
 
   #root {
     height: 100vh;
-    max-height: var(--app-height);
-    overflow: hidden;
+    height: var(--app-height);
+    overflow-y: auto;
+    overflow-x: hidden;
     display: flex;
     flex-direction: column;
   }
@@ -98,10 +100,11 @@
   }
   
   .app-main-content {
-    height: calc(var(--app-height) - 64px);
+    min-height: calc(var(--app-height) - 64px);
     overflow-y: auto !important;
     padding: 1.5rem 0;
     background-color: rgb(249, 250, 251);
+    -webkit-overflow-scrolling: touch; /* For smooth scrolling on iOS */
   }
   
   .chat-container {
