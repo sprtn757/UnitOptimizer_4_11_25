@@ -1,4 +1,10 @@
 import type { Express, Request, Response } from "express";
+import type { FileArray, File as MulterFile } from "multer";
+
+// Extended Request type with files property from multer
+interface RequestWithFiles extends Request {
+  files?: MulterFile[];
+}
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import multer from "multer";
@@ -6,6 +12,10 @@ import { extractTextFromFile } from "./fileProcessing";
 import { analyzeCurriculum, getChatResponse, type CurriculumAnalysisResult } from "./openai";
 import { insertFileSchema, insertAnalysisSchema, insertMessageSchema } from "@shared/schema";
 import { z } from "zod";
+import * as XLSX from 'xlsx';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
 
 // Set up multer for file uploads
 const upload = multer({ 
@@ -19,6 +29,38 @@ const upload = multer({
 // A simple in-memory store for storing analysis results
 // In a real app, this would be in a database
 const analysisResultsCache = new Map<string, CurriculumAnalysisResult>();
+
+// Function to process Excel files directly without using command line tools
+async function processExcelFile(buffer: Buffer): Promise<string> {
+  try {
+    // Create a temporary file path
+    const tempDir = os.tmpdir();
+    const tempFilePath = path.join(tempDir, `${Date.now()}-temp-excel.xlsx`);
+    
+    // Write the buffer to a temp file
+    await fs.promises.writeFile(tempFilePath, buffer);
+    
+    // Read the Excel file with the xlsx library
+    const workbook = XLSX.readFile(tempFilePath);
+    
+    // Get the first worksheet
+    const firstSheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[firstSheetName];
+    
+    // Convert to JSON and then to string
+    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+    const resultText = JSON.stringify(jsonData, null, 2);
+    
+    // Clean up the temp file
+    await fs.promises.unlink(tempFilePath);
+    
+    return resultText;
+  } catch (error) {
+    console.error('Error processing Excel file:', error);
+    // Return a simpler result if there's an error
+    return 'Failed to process Excel file: ' + (error instanceof Error ? error.message : String(error));
+  }
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes
@@ -70,17 +112,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
         
-        // Extract text content based on file type
-        const contentResult = await extractTextFromFile(file.buffer, file.originalname);
+        // Check if this is an Excel file
+        const fileExtension = path.extname(file.originalname).toLowerCase();
+        let extractedText = '';
+        let extractError = undefined;
         
-        if (contentResult.error) {
-          return res.status(400).json({ message: contentResult.error });
+        if (fileExtension === '.xlsx' || fileExtension === '.xls') {
+          console.log('Processing Excel file:', file.originalname);
+          try {
+            // Use our direct Excel processor
+            extractedText = await processExcelFile(file.buffer);
+          } catch (error) {
+            console.error('Excel processing error:', error);
+            const excelError = error as Error;
+            extractError = `Failed to process Excel file: ${excelError.message || String(error)}`;
+          }
+        } else {
+          // Use the regular file processor for non-Excel files
+          const contentResult = await extractTextFromFile(file.buffer, file.originalname);
+          extractedText = contentResult.text;
+          extractError = contentResult.error;
+        }
+        
+        if (extractError) {
+          return res.status(400).json({ message: extractError });
         }
         
         // Store the file with extracted content
         const savedFile = await storage.createFile({
           ...fileSchema.data,
-          content: contentResult.text
+          content: extractedText
         });
         
         uploadedFiles.push({
