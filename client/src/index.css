@@ -43,12 +43,22 @@
     background-size: 1.5em 1.5em !important;
     padding-right: 2.5rem !important;
     text-transform: none !important;
+    font-size: 16px !important; /* Prevent iOS zoom on focus */
+    position: relative !important;
+    z-index: 10 !important; /* Ensure select appears above other elements */
+    touch-action: manipulation !important; /* Better touch handling */
   }
   
   /* Make sure select options are visible and selectable */
   .native-select option {
     background-color: white;
     color: black;
+    font-size: 16px !important; /* Consistent font size */
+  }
+  
+  /* Hide focus outline in iOS */
+  .native-select:focus {
+    outline: none !important;
   }
   
   .layout-contained {

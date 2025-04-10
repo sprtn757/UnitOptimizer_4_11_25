@@ -2,8 +2,34 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="theme-color" content="#ffffff" />
     <title>Unit Optimizer - Curriculum Analysis</title>
+    <style>
+      /* Critical styles to prevent scrolling issues before JS loads */
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        position: relative;
+        overflow-x: hidden;
+        overscroll-behavior: none;
+      }
+      
+      #root {
+        height: 100%;
+        position: relative;
+        overscroll-behavior: none;
+      }
+      
+      /* Prevent iOS input zooming */
+      input, select, textarea {
+        font-size: 16px !important;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>

@@ -51,51 +51,51 @@ export function SelectionForm({ onSelectionChange }: SelectionFormProps) {
     }
   }, [gradeLevel, subjectArea, onSelectionChange]);
 
-  const handleGradeLevelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setGradeLevel(e.target.value);
-    
-    // Reset document body overflow to ensure scrolling works after selection
-    setTimeout(() => {
-      document.body.classList.remove('no-scroll');
-      document.documentElement.classList.remove('no-scroll');
-      document.body.style.overflow = '';
-      document.documentElement.style.overflow = '';
-      document.body.style.position = '';
-      document.documentElement.style.position = '';
-      document.body.style.overscrollBehavior = '';
-      
-      // Ensure whole document is scrollable
+  // Generic function to handle scrolling issues after dropdown interaction
+  const fixScrollAfterSelect = () => {
+    try {
+      // Instead of manipulating scrolling properties directly,
+      // Just ensure the document is at a stable state
+      document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
       document.body.style.height = 'auto';
       document.documentElement.style.height = 'auto';
-    }, 100);
+      
+      // Reset overscroll behavior
+      document.body.style.overscrollBehavior = 'none';
+      document.documentElement.style.overscrollBehavior = 'none';
+      
+      // For mobile Safari specifically
+      document.body.style.position = 'static';
+      document.documentElement.style.position = 'static';
+    } catch (e) {
+      console.error("Error fixing scroll after select:", e);
+    }
+  };
+
+  // Handle focus, blur and change events for better mobile experience
+  const handleFocus = () => {
+    // We don't set no-scroll here to allow scrolling the dropdown
+  };
+  
+  const handleBlur = () => {
+    // When focus leaves the select, restore scrolling
+    fixScrollAfterSelect();
+  };
+
+  const handleGradeLevelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setGradeLevel(e.target.value);
+    // Use requestAnimationFrame to wait for browser to complete its work
+    requestAnimationFrame(() => {
+      fixScrollAfterSelect();
+    });
   };
 
   const handleSubjectAreaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSubjectArea(e.target.value);
-    
-    // Reset document body overflow to ensure scrolling works after selection
-    setTimeout(() => {
-      document.body.classList.remove('no-scroll');
-      document.documentElement.classList.remove('no-scroll');
-      document.body.style.overflow = '';
-      document.documentElement.style.overflow = '';
-      document.body.style.position = '';
-      document.documentElement.style.position = '';
-      document.body.style.overscrollBehavior = '';
-      
-      // Also reset all parent containers that might affect scrolling
-      const mainContent = document.querySelector('.app-main-content');
-      if (mainContent) {
-        (mainContent as HTMLElement).style.overflow = 'auto';
-        (mainContent as HTMLElement).style.overflowY = 'auto';
-        (mainContent as HTMLElement).style.overscrollBehavior = '';
-        (mainContent as HTMLElement).style.position = '';
-      }
-      
-      // Ensure whole document is scrollable
-      document.body.style.height = 'auto';
-      document.documentElement.style.height = 'auto';
-    }, 100);
+    // Use requestAnimationFrame to wait for browser to complete its work
+    requestAnimationFrame(() => {
+      fixScrollAfterSelect();
+    });
   };
 
   return (
@@ -108,6 +108,8 @@ export function SelectionForm({ onSelectionChange }: SelectionFormProps) {
           id="grade-level" 
           value={gradeLevel} 
           onChange={handleGradeLevelChange}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
           className="native-select w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
         >
           <option value="" disabled>Select grade</option>
@@ -127,6 +129,8 @@ export function SelectionForm({ onSelectionChange }: SelectionFormProps) {
           id="subject-area" 
           value={subjectArea} 
           onChange={handleSubjectAreaChange}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
           className="native-select w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
         >
           <option value="" disabled>Select subject</option>
