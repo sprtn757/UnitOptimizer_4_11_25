@@ -143,6 +143,19 @@ export function SelectionForm({ onSelectionChange }: SelectionFormProps) {
 
   const handleUnitChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setUnitOfStudy(e.target.value);
+    
+    // Reset document body overflow to ensure scrolling works after selection
+    setTimeout(() => {
+      document.body.style.overflow = 'auto';
+      document.documentElement.style.overflow = 'auto';
+      
+      // Also reset all parent containers that might affect scrolling
+      const mainContent = document.querySelector('.app-main-content');
+      if (mainContent) {
+        (mainContent as HTMLElement).style.overflow = 'auto';
+        (mainContent as HTMLElement).style.overflowY = 'auto';
+      }
+    }, 0);
   };
 
   return (

@@ -99,7 +99,7 @@
   
   .app-main-content {
     height: calc(var(--app-height) - 64px);
-    overflow-y: auto;
+    overflow-y: auto !important;
     padding: 1.5rem 0;
     background-color: rgb(249, 250, 251);
   }
