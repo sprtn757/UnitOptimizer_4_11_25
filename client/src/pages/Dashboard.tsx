@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { SelectionForm } from "@/components/SelectionForm";
 import { FileUploader } from "@/components/FileUploader";
@@ -47,19 +47,19 @@ export default function Dashboard() {
     },
   });
 
-  const handleSelectionChange = (selection: {
+  const handleSelectionChange = useCallback((selection: {
     gradeLevel: string;
     subjectArea: string;
     unitOfStudy: string;
   }) => {
     setCurriculumSelection(selection);
-  };
+  }, []);
 
-  const handleFilesUploaded = (files: UploadedFile[]) => {
+  const handleFilesUploaded = useCallback((files: UploadedFile[]) => {
     setUploadedFiles(files);
-  };
+  }, []);
 
-  const handleProcessFiles = () => {
+  const handleProcessFiles = useCallback(() => {
     if (!curriculumSelection) {
       toast({
         title: "Missing Selection",
@@ -82,11 +82,15 @@ export default function Dashboard() {
       ...curriculumSelection,
       fileIds: uploadedFiles.map((file) => file.id),
     });
-  };
+  }, [curriculumSelection, uploadedFiles, toast, analysisMutation]);
 
-  const toggleMobileSidebar = () => {
-    setIsMobileSidebarOpen(!isMobileSidebarOpen);
-  };
+  const toggleMobileSidebar = useCallback(() => {
+    setIsMobileSidebarOpen(prev => !prev);
+  }, []);
+  
+  const closeMobileSidebar = useCallback(() => {
+    setIsMobileSidebarOpen(false);
+  }, []);
 
   return (
     <>
@@ -149,7 +153,7 @@ export default function Dashboard() {
       {isMobileSidebarOpen && (
         <div 
           className="md:hidden fixed inset-0 z-20 bg-black bg-opacity-50" 
-          onClick={() => setIsMobileSidebarOpen(false)}
+          onClick={closeMobileSidebar}
         />
       )}
 

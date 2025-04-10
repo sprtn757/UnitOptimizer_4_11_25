@@ -1,0 +1,177 @@
+[Debug] [vite] connecting... (client, line 495)
+[Debug] [vite] connected. (client, line 618)
+[Error] Warning: Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render.
+SelectionForm@https://981618d7-bc9e-4bd8-801f-31624b9e650d-00-1ps9gflm15g4e.janeway.replit.dev/src/components/SelectionForm.tsx:45:50
+div
+_c9@https://981618d7-bc9e-4bd8-801f-31624b9e650d-00-1ps9gflm15g4e.janeway.replit.dev/src/components/ui/card.tsx:114:10
+div
+_c@https://981618d7-bc9e-4bd8-801f-31624b9e650d-00-1ps9gflm15g4e.janeway.replit.dev/src/components/ui/card.tsx:20:9
+div
+div
+main
+Dashboard@https://981618d7-bc9e-4bd8-801f-31624b9e650d-00-1ps9gflm15g4e.janeway.replit.dev/src/pages/Dashboard.tsx:31:65
+Route@https://981618d7-bc9e-4bd8-801f-31624b9e650d-00-1ps9gflm15g4e.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js:323:14
+Switch@https://981618d7-bc9e-4bd8-801f-31624b9e650d-00-1ps9gflm15g4e.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js:380:27
+Router
+div
+div
+AppContainer@https://981618d7-bc9e-4bd8-801f-31624b9e650d-00-1ps9gflm15g4e.janeway.replit.dev/src/components/AppContainer.tsx:20:5
+QueryClientProvider@https://981618d7-bc9e-4bd8-801f-31624b9e650d-00-1ps9gflm15g4e.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js:2805:9
+App
+	printWarning (chunk-WERSD76P.js:521)
+	error (chunk-WERSD76P.js:505)
+	checkForNestedUpdates (chunk-WERSD76P.js:19665)
+	scheduleUpdateOnFiber (chunk-WERSD76P.js:18533)
+	dispatchSetState (chunk-WERSD76P.js:12403)
+	handleSelectionChange (Dashboard.tsx:59)
+	(anonymous function) (SelectionForm.tsx:52)
+	commitHookEffectListMount (chunk-WERSD76P.js:16915)
+	commitPassiveMountOnFiber (chunk-WERSD76P.js:18156)
+	commitPassiveMountEffects_complete (chunk-WERSD76P.js:18129)
+	commitPassiveMountEffects_begin (chunk-WERSD76P.js:18119)
+	commitPassiveMountEffects (chunk-WERSD76P.js:18109)
+	flushPassiveEffectsImpl (chunk-WERSD76P.js:19490)
+	flushPassiveEffects (chunk-WERSD76P.js:19447)
+	(anonymous function) (chunk-WERSD76P.js:19328)
+	workLoop (chunk-WERSD76P.js:197)
+	flushWork (chunk-WERSD76P.js:176)
+	performWorkUntilDeadline (chunk-WERSD76P.js:384)
+[Error] Warning: Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render.
+	printWarning (chunk-WERSD76P.js:521)
+	error (chunk-WERSD76P.js:505)
+	checkForNestedUpdates (chunk-WERSD76P.js:19665)
+	scheduleUpdateOnFiber (chunk-WERSD76P.js:18533)
+	dispatchSetState (chunk-WERSD76P.js:12403)
+	(anonymous function) (use-toast.ts:80)
+	forEach
+	dispatch (use-toast.ts:79)
+	onOpenChange (use-toast.ts:97)
+	(anonymous function) (chunk-OWDAE4UD.js:250)
+	(anonymous function) (@radix-ui_react-toast.js:614)
+	callCallback2 (chunk-WERSD76P.js:3674)
+	dispatchEvent
+	invokeGuardedCallbackDev (chunk-WERSD76P.js:3699)
+	invokeGuardedCallback (chunk-WERSD76P.js:3733)
+	invokeGuardedCallbackAndCatchFirstError (chunk-WERSD76P.js:3736)
+	executeDispatch (chunk-WERSD76P.js:7014)
+	processDispatchQueueItemsInOrder (chunk-WERSD76P.js:7034)
+	processDispatchQueue (chunk-WERSD76P.js:7043)
+	dispatchEventsForPlugins (chunk-WERSD76P.js:7051)
+	batchedUpdates$1 (chunk-WERSD76P.js:18913)
+	batchedUpdates (chunk-WERSD76P.js:3579)
+	dispatchEventForPluginEventSystem (chunk-WERSD76P.js:7173)
+	dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay (chunk-WERSD76P.js:5478)
+	dispatchEvent (chunk-WERSD76P.js:5472:93)
+	dispatchDiscreteEvent (chunk-WERSD76P.js:5449)
+[Error] Warning: Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render.
+SelectionForm@https://981618d7-bc9e-4bd8-801f-31624b9e650d-00-1ps9gflm15g4e.janeway.replit.dev/src/components/SelectionForm.tsx:45:50
+div
+_c9@https://981618d7-bc9e-4bd8-801f-31624b9e650d-00-1ps9gflm15g4e.janeway.replit.dev/src/components/ui/card.tsx:114:10
+div
+_c@https://981618d7-bc9e-4bd8-801f-31624b9e650d-00-1ps9gflm15g4e.janeway.replit.dev/src/components/ui/card.tsx:20:9
+div
+div
+main
+Dashboard@https://981618d7-bc9e-4bd8-801f-31624b9e650d-00-1ps9gflm15g4e.janeway.replit.dev/src/pages/Dashboard.tsx:31:65
+Route@https://981618d7-bc9e-4bd8-801f-31624b9e650d-00-1ps9gflm15g4e.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js:323:14
+Switch@https://981618d7-bc9e-4bd8-801f-31624b9e650d-00-1ps9gflm15g4e.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js:380:27
+Router
+div
+div
+AppContainer@https://981618d7-bc9e-4bd8-801f-31624b9e650d-00-1ps9gflm15g4e.janeway.replit.dev/src/components/AppContainer.tsx:20:5
+QueryClientProvider@https://981618d7-bc9e-4bd8-801f-31624b9e650d-00-1ps9gflm15g4e.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js:2805:9
+App
+	printWarning (chunk-WERSD76P.js:521)
+	error (chunk-WERSD76P.js:505)
+	checkForNestedUpdates (chunk-WERSD76P.js:19665)
+	scheduleUpdateOnFiber (chunk-WERSD76P.js:18533)
+	dispatchSetState (chunk-WERSD76P.js:12403)
+	handleSelectionChange (Dashboard.tsx:59)
+	(anonymous function) (SelectionForm.tsx:52)
+	commitHookEffectListMount (chunk-WERSD76P.js:16915)
+	commitPassiveMountOnFiber (chunk-WERSD76P.js:18156)
+	commitPassiveMountEffects_complete (chunk-WERSD76P.js:18129)
+	commitPassiveMountEffects_begin (chunk-WERSD76P.js:18119)
+	commitPassiveMountEffects (chunk-WERSD76P.js:18109)
+	flushPassiveEffectsImpl (chunk-WERSD76P.js:19490)
+	flushPassiveEffects (chunk-WERSD76P.js:19447)
+	(anonymous function) (chunk-WERSD76P.js:19328)
+	workLoop (chunk-WERSD76P.js:197)
+	flushWork (chunk-WERSD76P.js:176)
+	performWorkUntilDeadline (chunk-WERSD76P.js:384)
+[Error] Failed to load resource: the server responded with a status of 500 (Internal Server Error) (analyze, line 0)
+[Error] Error analyzing curriculum: – Error: 500: {"message":"Failed to analyze curriculum"}
+Error: 500: {"message":"Failed to analyze curriculum"}
+	(anonymous function) (fileProcessing.ts:32)
+[Error] Warning: Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render.
+SelectionForm@https://981618d7-bc9e-4bd8-801f-31624b9e650d-00-1ps9gflm15g4e.janeway.replit.dev/src/components/SelectionForm.tsx:45:50
+div
+_c9@https://981618d7-bc9e-4bd8-801f-31624b9e650d-00-1ps9gflm15g4e.janeway.replit.dev/src/components/ui/card.tsx:114:10
+div
+_c@https://981618d7-bc9e-4bd8-801f-31624b9e650d-00-1ps9gflm15g4e.janeway.replit.dev/src/components/ui/card.tsx:20:9
+div
+div
+main
+Dashboard@https://981618d7-bc9e-4bd8-801f-31624b9e650d-00-1ps9gflm15g4e.janeway.replit.dev/src/pages/Dashboard.tsx:31:65
+Route@https://981618d7-bc9e-4bd8-801f-31624b9e650d-00-1ps9gflm15g4e.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js:323:14
+Switch@https://981618d7-bc9e-4bd8-801f-31624b9e650d-00-1ps9gflm15g4e.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js:380:27
+Router
+div
+div
+AppContainer@https://981618d7-bc9e-4bd8-801f-31624b9e650d-00-1ps9gflm15g4e.janeway.replit.dev/src/components/AppContainer.tsx:20:5
+QueryClientProvider@https://981618d7-bc9e-4bd8-801f-31624b9e650d-00-1ps9gflm15g4e.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js:2805:9
+App
+	printWarning (chunk-WERSD76P.js:521)
+	error (chunk-WERSD76P.js:505)
+	checkForNestedUpdates (chunk-WERSD76P.js:19665)
+	scheduleUpdateOnFiber (chunk-WERSD76P.js:18533)
+	dispatchSetState (chunk-WERSD76P.js:12403)
+	handleSelectionChange (Dashboard.tsx:59)
+	(anonymous function) (SelectionForm.tsx:52)
+	commitHookEffectListMount (chunk-WERSD76P.js:16915)
+	commitPassiveMountOnFiber (chunk-WERSD76P.js:18156)
+	commitPassiveMountEffects_complete (chunk-WERSD76P.js:18129)
+	commitPassiveMountEffects_begin (chunk-WERSD76P.js:18119)
+	commitPassiveMountEffects (chunk-WERSD76P.js:18109)
+	flushPassiveEffectsImpl (chunk-WERSD76P.js:19490)
+	flushPassiveEffects (chunk-WERSD76P.js:19447)
+	(anonymous function) (chunk-WERSD76P.js:19328)
+	workLoop (chunk-WERSD76P.js:197)
+	flushWork (chunk-WERSD76P.js:176)
+	performWorkUntilDeadline (chunk-WERSD76P.js:384)
+[Error] Warning: Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render.
+SelectionForm@https://981618d7-bc9e-4bd8-801f-31624b9e650d-00-1ps9gflm15g4e.janeway.replit.dev/src/components/SelectionForm.tsx:45:50
+div
+_c9@https://981618d7-bc9e-4bd8-801f-31624b9e650d-00-1ps9gflm15g4e.janeway.replit.dev/src/components/ui/card.tsx:114:10
+div
+_c@https://981618d7-bc9e-4bd8-801f-31624b9e650d-00-1ps9gflm15g4e.janeway.replit.dev/src/components/ui/card.tsx:20:9
+div
+div
+main
+Dashboard@https://981618d7-bc9e-4bd8-801f-31624b9e650d-00-1ps9gflm15g4e.janeway.replit.dev/src/pages/Dashboard.tsx:31:65
+Route@https://981618d7-bc9e-4bd8-801f-31624b9e650d-00-1ps9gflm15g4e.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js:323:14
+Switch@https://981618d7-bc9e-4bd8-801f-31624b9e650d-00-1ps9gflm15g4e.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js:380:27
+Router
+div
+div
+AppContainer@https://981618d7-bc9e-4bd8-801f-31624b9e650d-00-1ps9gflm15g4e.janeway.replit.dev/src/components/AppContainer.tsx:20:5
+QueryClientProvider@https://981618d7-bc9e-4bd8-801f-31624b9e650d-00-1ps9gflm15g4e.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js:2805:9
+App
+	printWarning (chunk-WERSD76P.js:521)
+	error (chunk-WERSD76P.js:505)
+	checkForNestedUpdates (chunk-WERSD76P.js:19665)
+	scheduleUpdateOnFiber (chunk-WERSD76P.js:18533)
+	dispatchSetState (chunk-WERSD76P.js:12403)
+	handleSelectionChange (Dashboard.tsx:59)
+	(anonymous function) (SelectionForm.tsx:52)
+	commitHookEffectListMount (chunk-WERSD76P.js:16915)
+	commitPassiveMountOnFiber (chunk-WERSD76P.js:18156)
+	commitPassiveMountEffects_complete (chunk-WERSD76P.js:18129)
+	commitPassiveMountEffects_begin (chunk-WERSD76P.js:18119)
+	commitPassiveMountEffects (chunk-WERSD76P.js:18109)
+	flushPassiveEffectsImpl (chunk-WERSD76P.js:19490)
+	flushPassiveEffects (chunk-WERSD76P.js:19447)
+	(anonymous function) (chunk-WERSD76P.js:19328)
+	workLoop (chunk-WERSD76P.js:197)
+	flushWork (chunk-WERSD76P.js:176)
+	performWorkUntilDeadline (chunk-WERSD76P.js:384)
