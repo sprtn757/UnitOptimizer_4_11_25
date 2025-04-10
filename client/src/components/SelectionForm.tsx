@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo, useCallback } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileSelectField } from "@/components/MobileSelectField";
 
@@ -52,13 +52,13 @@ export function SelectionForm({ onSelectionChange }: SelectionFormProps) {
     }
   }, [gradeLevel, subjectArea, onSelectionChange]);
 
-  const handleGradeLevelChange = (value: string) => {
+  const handleGradeLevelChange = useCallback((value: string) => {
     setGradeLevel(value);
-  };
+  }, []);
 
-  const handleSubjectAreaChange = (value: string) => {
+  const handleSubjectAreaChange = useCallback((value: string) => {
     setSubjectArea(value);
-  };
+  }, []);
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
