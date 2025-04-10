@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 
 const GRADE_LEVELS = [
@@ -106,10 +105,6 @@ export function SelectionForm({ onSelectionChange }: SelectionFormProps) {
   // Update unit options when subject area changes
   useEffect(() => {
     if (subjectArea) {
-      // Log to help debug
-      console.log('Subject area changed to:', subjectArea);
-      console.log('Available units:', UNITS_BY_SUBJECT[subjectArea]);
-      
       // Make sure we have units for this subject area
       const units = UNITS_BY_SUBJECT[subjectArea];
       if (units && units.length > 0) {
@@ -138,74 +133,83 @@ export function SelectionForm({ onSelectionChange }: SelectionFormProps) {
     }
   }, [gradeLevel, subjectArea, unitOfStudy, onSelectionChange]);
 
+  const handleGradeLevelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setGradeLevel(e.target.value);
+  };
+
+  const handleSubjectAreaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSubjectArea(e.target.value);
+  };
+
+  const handleUnitChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setUnitOfStudy(e.target.value);
+  };
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
       <div>
         <Label htmlFor="grade-level" className="block text-sm font-medium text-neutral-700 mb-1">
           Grade Level
         </Label>
-        <Select value={gradeLevel} onValueChange={setGradeLevel}>
-          <SelectTrigger id="grade-level" className="w-full">
-            <SelectValue placeholder="Select grade" />
-          </SelectTrigger>
-          <SelectContent position="popper" className="max-h-[200px] overflow-y-auto">
-            {GRADE_LEVELS.map((grade) => (
-              <SelectItem key={grade.value} value={grade.value}>
-                {grade.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <select 
+          id="grade-level" 
+          value={gradeLevel} 
+          onChange={handleGradeLevelChange}
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+        >
+          <option value="" disabled>Select grade</option>
+          {GRADE_LEVELS.map((grade) => (
+            <option key={grade.value} value={grade.value}>
+              {grade.label}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div>
         <Label htmlFor="subject-area" className="block text-sm font-medium text-neutral-700 mb-1">
           Subject Area
         </Label>
-        <Select value={subjectArea} onValueChange={setSubjectArea}>
-          <SelectTrigger id="subject-area" className="w-full">
-            <SelectValue placeholder="Select subject" />
-          </SelectTrigger>
-          <SelectContent position="popper" className="max-h-[200px] overflow-y-auto">
-            {SUBJECT_AREAS.map((subject) => (
-              <SelectItem key={subject.value} value={subject.value}>
-                {subject.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <select 
+          id="subject-area" 
+          value={subjectArea} 
+          onChange={handleSubjectAreaChange}
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+        >
+          <option value="" disabled>Select subject</option>
+          {SUBJECT_AREAS.map((subject) => (
+            <option key={subject.value} value={subject.value}>
+              {subject.label}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div>
         <Label htmlFor="unit-study" className="block text-sm font-medium text-neutral-700 mb-1">
           Unit of Study
         </Label>
-        <Select 
+        <select 
+          id="unit-study" 
           value={unitOfStudy} 
-          onValueChange={setUnitOfStudy} 
+          onChange={handleUnitChange}
           disabled={!subjectArea || unitOptions.length === 0}
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <SelectTrigger id="unit-study" className="w-full">
-            <SelectValue placeholder={
-              !subjectArea 
-                ? "Please select subject area first" 
-                : unitOptions.length === 0 
-                ? "No units available for this subject" 
-                : "Select unit"
-            } />
-          </SelectTrigger>
-          <SelectContent position="popper" className="max-h-[200px] overflow-y-auto scrollbar-thin">
-            {unitOptions.length > 0 ? (
-              unitOptions.map((unit) => (
-                <SelectItem key={unit.value} value={unit.value}>
-                  {unit.label}
-                </SelectItem>
-              ))
-            ) : (
-              <SelectItem value="no-units" disabled>No units available</SelectItem>
-            )}
-          </SelectContent>
-        </Select>
+          <option value="" disabled>
+            {!subjectArea 
+              ? "Please select subject area first" 
+              : unitOptions.length === 0 
+              ? "No units available for this subject" 
+              : "Select unit"
+            }
+          </option>
+          {unitOptions.map((unit) => (
+            <option key={unit.value} value={unit.value}>
+              {unit.label}
+            </option>
+          ))}
+        </select>
       </div>
     </div>
   );
