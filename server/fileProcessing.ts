@@ -34,21 +34,21 @@ export async function extractTextFromFile(fileBuffer: Buffer, fileName: string):
         
       case '.pdf':
         // Use pdf-parse (we'll use the exec approach since we can't import directly)
-        const { stdout: pdfText } = await execAsync(`npx pdf-parse ${tempFilePath}`);
+        const { stdout: pdfText } = await execAsync(`npx pdf-parse "${tempFilePath}"`);
         extractedText = pdfText;
         break;
         
       case '.docx':
       case '.doc':
         // Use mammoth for DOCX extraction
-        const { stdout: docText } = await execAsync(`npx mammoth ${tempFilePath} --output-format=text`);
+        const { stdout: docText } = await execAsync(`npx mammoth "${tempFilePath}" --output-format=text`);
         extractedText = docText;
         break;
         
       case '.xlsx':
       case '.xls':
-        // Use xlsx for Excel processing
-        const { stdout: xlsxText } = await execAsync(`npx xlsx ${tempFilePath} --sheet=0 --raw`);
+        // Use xlsx for Excel processing - quotes around path to handle spaces in filenames
+        const { stdout: xlsxText } = await execAsync(`npx xlsx "${tempFilePath}" --sheet=0 --raw`);
         extractedText = xlsxText;
         break;
         
@@ -56,7 +56,7 @@ export async function extractTextFromFile(fileBuffer: Buffer, fileName: string):
       case '.ppt':
         // For PowerPoint files, we'll extract what we can
         // Note: In a real app, you might want a more specialized library
-        const { stdout: pptText } = await execAsync(`npx textract ${tempFilePath}`);
+        const { stdout: pptText } = await execAsync(`npx textract "${tempFilePath}"`);
         extractedText = pptText;
         break;
         
@@ -71,11 +71,11 @@ export async function extractTextFromFile(fileBuffer: Buffer, fileName: string):
     await fs.promises.unlink(tempFilePath);
     
     return { text: extractedText };
-  } catch (error) {
+  } catch (error: any) {
     console.error(`Error extracting text from ${fileName}:`, error);
     return {
       text: '',
-      error: `Failed to extract text: ${error.message}`
+      error: `Failed to extract text: ${error.message || String(error)}`
     };
   }
 }
