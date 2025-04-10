@@ -168,7 +168,7 @@ export function FileUploader({ onFilesUploaded }: FileUploaderProps) {
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    maxFiles: 25,
+    maxFiles: 30,
     maxSize: 50 * 1024 * 1024 // 50MB
   });
 
@@ -214,7 +214,7 @@ export function FileUploader({ onFilesUploaded }: FileUploaderProps) {
             Browse Files
           </Button>
           <p className="text-neutral-500 text-xs md:text-sm mt-2 md:mt-3">
-            Maximum 25 files, 50MB each
+            Maximum 30 files, 50MB each
           </p>
         </div>
       </div>
