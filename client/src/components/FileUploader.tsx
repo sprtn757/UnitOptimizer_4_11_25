@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useMutation } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
+import { Progress } from "@/components/ui/progress";
 
 interface UploadedFile {
   id: number;
@@ -84,31 +85,90 @@ interface FileUploaderProps {
 
 export function FileUploader({ onFilesUploaded }: FileUploaderProps) {
   const [files, setFiles] = useState<UploadedFile[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [currentUploadInfo, setCurrentUploadInfo] = useState<string>('');
   const { toast } = useToast();
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const uploadMutation = useMutation({
+  const uploadMutation = useMutation<{files: UploadedFile[]}, Error, File[]>({
     mutationFn: async (filesToUpload: File[]) => {
       const formData = new FormData();
       filesToUpload.forEach(file => {
         formData.append("files", file);
       });
       
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-        credentials: "include"
+      setIsUploading(true);
+      setUploadProgress(0);
+      
+      const totalSize = filesToUpload.reduce((sum, file) => sum + file.size, 0);
+      let uploadedSize = 0;
+      
+      const xhr = new XMLHttpRequest();
+      
+      // Setup progress tracking
+      xhr.upload.addEventListener('progress', (event) => {
+        if (event.lengthComputable) {
+          const percentComplete = Math.round((event.loaded / event.total) * 100);
+          setUploadProgress(percentComplete);
+          
+          // Calculate which file is currently being uploaded based on bytes uploaded
+          uploadedSize = event.loaded;
+          let accumulatedSize = 0;
+          let currentFileIndex = 0;
+          
+          for (let i = 0; i < filesToUpload.length; i++) {
+            accumulatedSize += filesToUpload[i].size;
+            if (uploadedSize <= accumulatedSize) {
+              currentFileIndex = i;
+              break;
+            }
+          }
+          
+          const currentFile = filesToUpload[currentFileIndex];
+          const fileProgress = Math.min(
+            100, 
+            Math.round(((uploadedSize - (accumulatedSize - currentFile.size)) / currentFile.size) * 100)
+          );
+          
+          setCurrentUploadInfo(
+            `Uploading ${currentFileIndex + 1}/${filesToUpload.length}: ${currentFile.name} (${fileProgress}%)`
+          );
+        }
       });
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || response.statusText);
-      }
-      
-      return response.json();
+      return new Promise<{files: UploadedFile[]}>((resolve, reject) => {
+        xhr.open('POST', '/api/upload');
+        xhr.setRequestHeader('Accept', 'application/json');
+        
+        xhr.onload = () => {
+          setIsUploading(false);
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const data = JSON.parse(xhr.responseText) as { files: UploadedFile[] };
+              resolve(data);
+            } catch (error) {
+              reject(new Error('Invalid response from server'));
+            }
+          } else {
+            reject(new Error(xhr.statusText || 'Upload failed'));
+          }
+        };
+        
+        xhr.onerror = () => {
+          setIsUploading(false);
+          reject(new Error('Network error occurred'));
+        };
+        
+        xhr.send(formData);
+      });
     },
     onSuccess: (data) => {
+      setIsUploading(false);
+      setUploadProgress(100);
+      setCurrentUploadInfo('');
+      
       toast({
         title: "Files Uploaded Successfully",
         description: `${data.files.length} files have been uploaded.`,
@@ -117,6 +177,10 @@ export function FileUploader({ onFilesUploaded }: FileUploaderProps) {
       onFilesUploaded([...files, ...data.files]);
     },
     onError: (error) => {
+      setIsUploading(false);
+      setUploadProgress(0);
+      setCurrentUploadInfo('');
+      
       toast({
         title: "Upload Failed",
         description: error.message,
@@ -194,10 +258,11 @@ export function FileUploader({ onFilesUploaded }: FileUploaderProps) {
         {...getRootProps()} 
         className={cn(
           "border-2 border-dashed border-neutral-300 rounded-lg p-4 md:p-8 text-center hover:bg-neutral-50 transition-colors duration-200 mb-4",
-          isDragActive && "border-primary bg-primary-light/5"
+          isDragActive && "border-primary bg-primary-light/5",
+          isUploading && "opacity-50 pointer-events-none"
         )}
       >
-        <input {...getInputProps()} ref={fileInputRef} />
+        <input {...getInputProps()} ref={fileInputRef} disabled={isUploading} />
         <div className="flex flex-col items-center justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 md:h-12 md:w-12 text-neutral-400 mb-2 md:mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
@@ -210,6 +275,7 @@ export function FileUploader({ onFilesUploaded }: FileUploaderProps) {
               e.stopPropagation();
               handleBrowseClick();
             }}
+            disabled={isUploading}
           >
             Browse Files
           </Button>
@@ -218,6 +284,18 @@ export function FileUploader({ onFilesUploaded }: FileUploaderProps) {
           </p>
         </div>
       </div>
+      
+      {/* Upload Progress Bar */}
+      {isUploading && (
+        <div className="mb-6 space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <div className="font-medium text-primary">Uploading Files...</div>
+            <div className="text-neutral-600">{uploadProgress}%</div>
+          </div>
+          <Progress value={uploadProgress} className="h-2" />
+          <p className="text-xs text-neutral-500 mt-1">{currentUploadInfo}</p>
+        </div>
+      )}
       
       {/* Uploaded Files List */}
       {files.length > 0 && (
