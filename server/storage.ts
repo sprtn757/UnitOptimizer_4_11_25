@@ -6,8 +6,8 @@ import {
   standards, type Standard, type InsertStandard
 } from "@shared/schema";
 
-// modify the interface with any CRUD methods
-// you might need
+import { db } from "./db";
+import { eq, and } from "drizzle-orm";
 
 export interface IStorage {
   // User methods
@@ -38,158 +38,132 @@ export interface IStorage {
   createStandard(standard: InsertStandard): Promise<Standard>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private files: Map<number, File>;
-  private analyses: Map<number, Analysis>;
-  private messages: Map<number, Message>;
-  private standards: Map<number, Standard>;
-  private currentUserId: number;
-  private currentFileId: number;
-  private currentAnalysisId: number;
-  private currentMessageId: number;
-  private currentStandardId: number;
-
+export class DatabaseStorage implements IStorage {
   constructor() {
-    this.users = new Map();
-    this.files = new Map();
-    this.analyses = new Map();
-    this.messages = new Map();
-    this.standards = new Map();
-    this.currentUserId = 1;
-    this.currentFileId = 1;
-    this.currentAnalysisId = 1;
-    this.currentMessageId = 1;
-    this.currentStandardId = 1;
-    
+    // Initialize database with some sample standards if they don't exist
     this.initializeStandards();
   }
 
   // Initialize with some sample California K12 standards
-  private initializeStandards() {
-    const scienceStandards = [
-      { code: "MS-ESS1-1", description: "Develop and use a model of the Earth-sun-moon system to describe the cyclic patterns of lunar phases, eclipses of the sun and moon, and seasons.", gradeLevel: "6", subjectArea: "science" },
-      { code: "MS-ESS1-2", description: "Develop and use a model to describe the role of gravity in the motions within galaxies and the solar system.", gradeLevel: "6", subjectArea: "science" },
-      { code: "MS-ESS1-3", description: "Analyze and interpret data to determine scale properties of objects in the solar system.", gradeLevel: "6", subjectArea: "science" },
-      { code: "MS-ESS1-4", description: "Construct a scientific explanation based on evidence from rock strata for how the geologic time scale is used to organize Earth's 4.6-billion-year-old history.", gradeLevel: "6", subjectArea: "science" }
-    ];
-    
-    scienceStandards.forEach(standard => {
-      this.createStandard(standard);
-    });
+  private async initializeStandards() {
+    try {
+      // Check if standards table is empty
+      const existingStandards = await db.select().from(standards).limit(1);
+      
+      if (existingStandards.length === 0) {
+        const scienceStandards = [
+          { code: "MS-ESS1-1", description: "Develop and use a model of the Earth-sun-moon system to describe the cyclic patterns of lunar phases, eclipses of the sun and moon, and seasons.", gradeLevel: "6", subjectArea: "science" },
+          { code: "MS-ESS1-2", description: "Develop and use a model to describe the role of gravity in the motions within galaxies and the solar system.", gradeLevel: "6", subjectArea: "science" },
+          { code: "MS-ESS1-3", description: "Analyze and interpret data to determine scale properties of objects in the solar system.", gradeLevel: "6", subjectArea: "science" },
+          { code: "MS-ESS1-4", description: "Construct a scientific explanation based on evidence from rock strata for how the geologic time scale is used to organize Earth's 4.6-billion-year-old history.", gradeLevel: "6", subjectArea: "science" }
+        ];
+        
+        for (const standard of scienceStandards) {
+          await this.createStandard(standard);
+        }
+      }
+    } catch (error) {
+      console.error("Error initializing standards:", error);
+    }
   }
 
   // User methods
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    const [user] = await db.insert(users).values(insertUser).returning();
     return user;
   }
 
   // File methods
   async getFile(id: number): Promise<File | undefined> {
-    return this.files.get(id);
+    const [file] = await db.select().from(files).where(eq(files.id, id));
+    return file;
   }
 
   async getFilesByUserId(userId: number): Promise<File[]> {
-    return Array.from(this.files.values()).filter(
-      (file) => file.userId === userId,
-    );
+    return await db.select().from(files).where(eq(files.userId, userId));
   }
 
   async createFile(insertFile: InsertFile): Promise<File> {
-    const id = this.currentFileId++;
-    const file: File = { 
-      ...insertFile, 
-      id,
-      uploadedAt: new Date()
-    };
-    this.files.set(id, file);
+    const [file] = await db.insert(files).values(insertFile).returning();
     return file;
   }
 
   async deleteFile(id: number): Promise<boolean> {
-    return this.files.delete(id);
+    const result = await db.delete(files).where(eq(files.id, id)).returning({ id: files.id });
+    return result.length > 0;
   }
 
   // Analysis methods
   async getAnalysis(id: number): Promise<Analysis | undefined> {
-    return this.analyses.get(id);
+    const [analysis] = await db.select().from(analyses).where(eq(analyses.id, id));
+    return analysis;
   }
 
   async getAnalysesByUserId(userId: number): Promise<Analysis[]> {
-    return Array.from(this.analyses.values()).filter(
-      (analysis) => analysis.userId === userId,
-    );
+    return await db.select().from(analyses).where(eq(analyses.userId, userId));
   }
 
   async createAnalysis(insertAnalysis: InsertAnalysis): Promise<Analysis> {
-    const id = this.currentAnalysisId++;
-    const analysis: Analysis = { 
-      ...insertAnalysis, 
-      id,
-      createdAt: new Date()
-    };
-    this.analyses.set(id, analysis);
+    const [analysis] = await db.insert(analyses).values(insertAnalysis).returning();
     return analysis;
   }
 
   // Message methods
   async getMessage(id: number): Promise<Message | undefined> {
-    return this.messages.get(id);
+    const [message] = await db.select().from(messages).where(eq(messages.id, id));
+    return message;
   }
 
   async getMessagesByAnalysisId(analysisId: number): Promise<Message[]> {
-    return Array.from(this.messages.values()).filter(
-      (message) => message.analysisId === analysisId,
-    ).sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+    return await db
+      .select()
+      .from(messages)
+      .where(eq(messages.analysisId, analysisId))
+      .orderBy(messages.createdAt);
   }
 
   async createMessage(insertMessage: InsertMessage): Promise<Message> {
-    const id = this.currentMessageId++;
-    const message: Message = { 
-      ...insertMessage, 
-      id,
-      createdAt: new Date()
-    };
-    this.messages.set(id, message);
+    const [message] = await db.insert(messages).values(insertMessage).returning();
     return message;
   }
 
   // Standard methods
   async getStandard(id: number): Promise<Standard | undefined> {
-    return this.standards.get(id);
+    const [standard] = await db.select().from(standards).where(eq(standards.id, id));
+    return standard;
   }
 
   async getStandardByCode(code: string): Promise<Standard | undefined> {
-    return Array.from(this.standards.values()).find(
-      (standard) => standard.code === code,
-    );
+    const [standard] = await db.select().from(standards).where(eq(standards.code, code));
+    return standard;
   }
 
   async getStandardsByGradeAndSubject(gradeLevel: string, subjectArea: string): Promise<Standard[]> {
-    return Array.from(this.standards.values()).filter(
-      (standard) => standard.gradeLevel === gradeLevel && standard.subjectArea === subjectArea,
-    );
+    return await db
+      .select()
+      .from(standards)
+      .where(
+        and(
+          eq(standards.gradeLevel, gradeLevel),
+          eq(standards.subjectArea, subjectArea)
+        )
+      );
   }
 
   async createStandard(insertStandard: InsertStandard): Promise<Standard> {
-    const id = this.currentStandardId++;
-    const standard: Standard = { ...insertStandard, id };
-    this.standards.set(id, standard);
+    const [standard] = await db.insert(standards).values(insertStandard).returning();
     return standard;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
