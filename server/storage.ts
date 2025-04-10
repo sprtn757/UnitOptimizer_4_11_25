@@ -39,6 +39,14 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // Cache for standards since they rarely change
+  private standardsCache: Map<string, Standard> = new Map();
+  private standardsByGradeSubjectCache: Map<string, Standard[]> = new Map();
+  
+  // Cache for files and analyses
+  private fileCache: Map<number, File> = new Map();
+  private analysisCache: Map<number, Analysis> = new Map();
+  
   constructor() {
     // Initialize database with some sample standards if they don't exist
     this.initializeStandards();
@@ -85,36 +93,81 @@ export class DatabaseStorage implements IStorage {
 
   // File methods
   async getFile(id: number): Promise<File | undefined> {
+    // Check cache first
+    if (this.fileCache.has(id)) {
+      return this.fileCache.get(id);
+    }
+    
+    // If not in cache, get from database
     const [file] = await db.select().from(files).where(eq(files.id, id));
+    
+    // Store in cache if found
+    if (file) {
+      this.fileCache.set(id, file);
+    }
+    
     return file;
   }
 
   async getFilesByUserId(userId: number): Promise<File[]> {
+    // No caching for this method as it could return many results that change frequently
     return await db.select().from(files).where(eq(files.userId, userId));
   }
 
   async createFile(insertFile: InsertFile): Promise<File> {
     const [file] = await db.insert(files).values(insertFile).returning();
+    
+    // Update cache with the new file
+    if (file) {
+      this.fileCache.set(file.id, file);
+    }
+    
     return file;
   }
 
   async deleteFile(id: number): Promise<boolean> {
     const result = await db.delete(files).where(eq(files.id, id)).returning({ id: files.id });
-    return result.length > 0;
+    
+    // Remove from cache if deleted
+    if (result.length > 0) {
+      this.fileCache.delete(id);
+      return true;
+    }
+    
+    return false;
   }
 
   // Analysis methods
   async getAnalysis(id: number): Promise<Analysis | undefined> {
+    // Check cache first
+    if (this.analysisCache.has(id)) {
+      return this.analysisCache.get(id);
+    }
+    
+    // If not in cache, get from database
     const [analysis] = await db.select().from(analyses).where(eq(analyses.id, id));
+    
+    // Store in cache if found
+    if (analysis) {
+      this.analysisCache.set(id, analysis);
+    }
+    
     return analysis;
   }
 
   async getAnalysesByUserId(userId: number): Promise<Analysis[]> {
+    // No caching for this method as it could return many results that change
     return await db.select().from(analyses).where(eq(analyses.userId, userId));
   }
 
   async createAnalysis(insertAnalysis: InsertAnalysis): Promise<Analysis> {
     const [analysis] = await db.insert(analyses).values(insertAnalysis).returning();
+    
+    // Update cache with the new analysis
+    if (analysis) {
+      this.analysisCache.set(analysis.id, analysis);
+    }
+    
     return analysis;
   }
 
@@ -139,17 +192,50 @@ export class DatabaseStorage implements IStorage {
 
   // Standard methods
   async getStandard(id: number): Promise<Standard | undefined> {
+    // Standards are less likely to change, so we cache them by ID
+    const idKey = `id-${id}`;
+    if (this.standardsCache.has(idKey)) {
+      return this.standardsCache.get(idKey);
+    }
+    
     const [standard] = await db.select().from(standards).where(eq(standards.id, id));
+    
+    if (standard) {
+      this.standardsCache.set(idKey, standard);
+      this.standardsCache.set(`code-${standard.code}`, standard);
+    }
+    
     return standard;
   }
 
   async getStandardByCode(code: string): Promise<Standard | undefined> {
+    // Check cache first
+    const codeKey = `code-${code}`;
+    if (this.standardsCache.has(codeKey)) {
+      return this.standardsCache.get(codeKey);
+    }
+    
     const [standard] = await db.select().from(standards).where(eq(standards.code, code));
+    
+    if (standard) {
+      this.standardsCache.set(codeKey, standard);
+      this.standardsCache.set(`id-${standard.id}`, standard);
+    }
+    
     return standard;
   }
 
   async getStandardsByGradeAndSubject(gradeLevel: string, subjectArea: string): Promise<Standard[]> {
-    return await db
+    // Create cache key for this specific query
+    const cacheKey = `${gradeLevel}-${subjectArea}`;
+    
+    // Check cache first
+    if (this.standardsByGradeSubjectCache.has(cacheKey)) {
+      return this.standardsByGradeSubjectCache.get(cacheKey)!;
+    }
+    
+    // If not in cache, get from database
+    const results = await db
       .select()
       .from(standards)
       .where(
@@ -158,10 +244,32 @@ export class DatabaseStorage implements IStorage {
           eq(standards.subjectArea, subjectArea)
         )
       );
+    
+    // Store in cache
+    this.standardsByGradeSubjectCache.set(cacheKey, results);
+    
+    // Also cache individual standards
+    for (const standard of results) {
+      this.standardsCache.set(`id-${standard.id}`, standard);
+      this.standardsCache.set(`code-${standard.code}`, standard);
+    }
+    
+    return results;
   }
 
   async createStandard(insertStandard: InsertStandard): Promise<Standard> {
     const [standard] = await db.insert(standards).values(insertStandard).returning();
+    
+    if (standard) {
+      // Update various caches
+      this.standardsCache.set(`id-${standard.id}`, standard);
+      this.standardsCache.set(`code-${standard.code}`, standard);
+      
+      // Clear the grade/subject cache since it might be affected
+      const cacheKey = `${standard.gradeLevel}-${standard.subjectArea}`;
+      this.standardsByGradeSubjectCache.delete(cacheKey);
+    }
+    
     return standard;
   }
 }
