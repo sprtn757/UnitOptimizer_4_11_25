@@ -28,66 +28,6 @@ const SUBJECT_AREAS = [
   { value: "cs", label: "Computer Science" },
 ];
 
-// Units by subject
-const UNITS_BY_SUBJECT: Record<string, Array<{ value: string; label: string }>> = {
-  math: [
-    { value: "numbers-operations", label: "Numbers & Operations" },
-    { value: "algebraic-thinking", label: "Algebraic Thinking" },
-    { value: "geometry", label: "Geometry" },
-    { value: "measurement-data", label: "Measurement & Data" },
-    { value: "statistics-probability", label: "Statistics & Probability" },
-  ],
-  english: [
-    { value: "reading-comprehension", label: "Reading Comprehension" },
-    { value: "writing-process", label: "Writing Process" },
-    { value: "grammar-usage", label: "Grammar & Usage" },
-    { value: "vocabulary-development", label: "Vocabulary Development" },
-    { value: "literature-analysis", label: "Literature Analysis" },
-  ],
-  science: [
-    { value: "earth-space-sciences", label: "Earth & Space Sciences" },
-    { value: "life-sciences", label: "Life Sciences" },
-    { value: "physical-sciences", label: "Physical Sciences" },
-    { value: "engineering-technology", label: "Engineering & Technology" },
-    { value: "scientific-method", label: "Scientific Method" },
-  ],
-  "social-studies": [
-    { value: "history", label: "History" },
-    { value: "geography", label: "Geography" },
-    { value: "civics", label: "Civics & Government" },
-    { value: "economics", label: "Economics" },
-    { value: "culture", label: "Culture & Society" },
-  ],
-  art: [
-    { value: "visual-arts", label: "Visual Arts Fundamentals" },
-    { value: "drawing", label: "Drawing & Sketching" },
-    { value: "painting", label: "Painting & Color Theory" },
-    { value: "sculpture", label: "Sculpture & 3D Design" },
-    { value: "art-history", label: "Art History & Appreciation" },
-  ],
-  music: [
-    { value: "music-theory", label: "Music Theory" },
-    { value: "instrumental", label: "Instrumental Music" },
-    { value: "vocal", label: "Vocal Music" },
-    { value: "music-history", label: "Music History" },
-    { value: "composition", label: "Composition & Arrangement" },
-  ],
-  pe: [
-    { value: "team-sports", label: "Team Sports" },
-    { value: "individual-sports", label: "Individual Sports" },
-    { value: "fitness", label: "Fitness & Conditioning" },
-    { value: "movement", label: "Movement & Rhythm" },
-    { value: "health", label: "Health & Wellness" },
-  ],
-  cs: [
-    { value: "programming", label: "Programming Fundamentals" },
-    { value: "web-design", label: "Web Design" },
-    { value: "data-science", label: "Data Science" },
-    { value: "robotics", label: "Robotics" },
-    { value: "digital-citizenship", label: "Digital Citizenship" },
-  ],
-};
-
 interface SelectionFormProps {
   onSelectionChange: (selection: {
     gradeLevel: string;
@@ -99,39 +39,17 @@ interface SelectionFormProps {
 export function SelectionForm({ onSelectionChange }: SelectionFormProps) {
   const [gradeLevel, setGradeLevel] = useState<string>("");
   const [subjectArea, setSubjectArea] = useState<string>("");
-  const [unitOfStudy, setUnitOfStudy] = useState<string>("");
-  const [unitOptions, setUnitOptions] = useState<Array<{ value: string; label: string }>>([]);
-
-  // Update unit options when subject area changes
-  useEffect(() => {
-    if (subjectArea) {
-      // Make sure we have units for this subject area
-      const units = UNITS_BY_SUBJECT[subjectArea];
-      if (units && units.length > 0) {
-        setUnitOptions(units);
-      } else {
-        console.warn(`No units found for subject area: ${subjectArea}`);
-        setUnitOptions([]);
-      }
-      
-      // Reset unit selection
-      setUnitOfStudy("");
-    } else {
-      setUnitOptions([]);
-      setUnitOfStudy("");
-    }
-  }, [subjectArea]);
 
   // Notify parent component when selections change
   useEffect(() => {
-    if (gradeLevel && subjectArea && unitOfStudy) {
+    if (gradeLevel && subjectArea) {
       onSelectionChange({
         gradeLevel,
         subjectArea,
-        unitOfStudy,
+        unitOfStudy: "general", // Default value since we removed the dropdown
       });
     }
-  }, [gradeLevel, subjectArea, unitOfStudy, onSelectionChange]);
+  }, [gradeLevel, subjectArea, onSelectionChange]);
 
   const handleGradeLevelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setGradeLevel(e.target.value);
@@ -139,10 +57,6 @@ export function SelectionForm({ onSelectionChange }: SelectionFormProps) {
 
   const handleSubjectAreaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSubjectArea(e.target.value);
-  };
-
-  const handleUnitChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setUnitOfStudy(e.target.value);
     
     // Reset document body overflow to ensure scrolling works after selection
     setTimeout(() => {
@@ -159,7 +73,7 @@ export function SelectionForm({ onSelectionChange }: SelectionFormProps) {
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
       <div>
         <Label htmlFor="grade-level" className="block text-sm font-medium text-neutral-700 mb-1">
           Grade Level
@@ -193,33 +107,6 @@ export function SelectionForm({ onSelectionChange }: SelectionFormProps) {
           {SUBJECT_AREAS.map((subject) => (
             <option key={subject.value} value={subject.value}>
               {subject.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div>
-        <Label htmlFor="unit-study" className="block text-sm font-medium text-neutral-700 mb-1">
-          Unit of Study
-        </Label>
-        <select 
-          id="unit-study" 
-          value={unitOfStudy} 
-          onChange={handleUnitChange}
-          disabled={!subjectArea || unitOptions.length === 0}
-          className="native-select w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <option value="" disabled>
-            {!subjectArea 
-              ? "Please select subject area first" 
-              : unitOptions.length === 0 
-              ? "No units available for this subject" 
-              : "Select unit"
-            }
-          </option>
-          {unitOptions.map((unit) => (
-            <option key={unit.value} value={unit.value}>
-              {unit.label}
             </option>
           ))}
         </select>
