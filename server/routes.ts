@@ -94,8 +94,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'No files uploaded' });
       }
       
-      const uploadedFiles = [];
-      
+      // Validate all files first to fail fast if there are issues
+      const fileSchemas = [];
       for (const file of files) {
         const fileSchema = insertFileSchema.safeParse({
           name: file.originalname,
@@ -107,55 +107,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (!fileSchema.success) {
           return res.status(400).json({ 
-            message: 'Invalid file data', 
+            message: 'Invalid file data',
+            fileName: file.originalname, 
             errors: fileSchema.error.errors 
           });
         }
         
-        // Check if this is an Excel file
-        const fileExtension = path.extname(file.originalname).toLowerCase();
-        let extractedText = '';
-        let extractError = undefined;
-        
-        if (fileExtension === '.xlsx' || fileExtension === '.xls') {
-          console.log('Processing Excel file:', file.originalname);
-          try {
-            // Use our direct Excel processor
-            extractedText = await processExcelFile(file.buffer);
-          } catch (error) {
-            console.error('Excel processing error:', error);
-            const excelError = error as Error;
-            extractError = `Failed to process Excel file: ${excelError.message || String(error)}`;
-          }
-        } else {
-          // Use the regular file processor for non-Excel files
-          const contentResult = await extractTextFromFile(file.buffer, file.originalname);
-          extractedText = contentResult.text;
-          extractError = contentResult.error;
-        }
-        
-        if (extractError) {
-          return res.status(400).json({ message: extractError });
-        }
-        
-        // Store the file with extracted content
-        const savedFile = await storage.createFile({
-          ...fileSchema.data,
-          content: extractedText
-        });
-        
-        uploadedFiles.push({
-          id: savedFile.id,
-          name: savedFile.name,
-          type: savedFile.type,
-          size: savedFile.size
+        fileSchemas.push({
+          file,
+          schema: fileSchema.data,
+          extension: path.extname(file.originalname).toLowerCase()
         });
       }
       
+      // Process files in batches to prevent memory issues
+      const batchSize = 5; // Process 5 files at a time
+      const uploadedFiles = [];
+      
+      // Define the type for file schema items
+      interface FileSchemaItem {
+        file: Express.Multer.File;
+        schema: any;
+        extension: string;
+      }
+      
+      // Function to process a batch of files
+      const processBatch = async (batch: FileSchemaItem[]) => {
+        const batchPromises = batch.map(async ({ file, schema, extension }) => {
+          try {
+            let extractedText = '';
+            
+            if (extension === '.xlsx' || extension === '.xls') {
+              console.log('Processing Excel file:', file.originalname);
+              extractedText = await processExcelFile(file.buffer);
+            } else {
+              // Use the regular file processor for non-Excel files
+              const contentResult = await extractTextFromFile(file.buffer, file.originalname);
+              if (contentResult.error) {
+                throw new Error(contentResult.error);
+              }
+              extractedText = contentResult.text;
+            }
+            
+            // Store the file with extracted content
+            const savedFile = await storage.createFile({
+              ...schema,
+              content: extractedText
+            });
+            
+            return {
+              id: savedFile.id,
+              name: savedFile.name,
+              type: savedFile.type,
+              size: savedFile.size
+            };
+          } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            console.error(`Error processing file ${file.originalname}:`, error);
+            throw new Error(`Failed to process file ${file.originalname}: ${errorMessage}`);
+          }
+        });
+        
+        return Promise.all(batchPromises);
+      };
+      
+      // Process files in batches
+      for (let i = 0; i < fileSchemas.length; i += batchSize) {
+        const batch = fileSchemas.slice(i, i + batchSize);
+        const batchResults = await processBatch(batch);
+        uploadedFiles.push(...batchResults);
+      }
+      
       res.json({ files: uploadedFiles });
-    } catch (error) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       console.error('Error uploading files:', error);
-      res.status(500).json({ message: 'Failed to upload files' });
+      res.status(500).json({ message: errorMessage || 'Failed to upload files' });
     }
   });
   
