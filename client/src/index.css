@@ -12,22 +12,22 @@
   }
   
   html, body {
-    height: 100vh;
-    height: var(--app-height);
+    height: 100%; /* Use percentage instead of vh */
     margin: 0;
     padding: 0;
-    overflow-y: auto;
+    position: relative;
+    overscroll-behavior: none; /* Prevent bouncing on mobile */
     overflow-x: hidden;
     @apply font-sans antialiased bg-background text-foreground;
   }
 
   #root {
-    height: 100vh;
-    height: var(--app-height);
-    overflow-y: auto;
+    height: 100%;
+    position: relative;
     overflow-x: hidden;
     display: flex;
     flex-direction: column;
+    overscroll-behavior-y: none; /* Prevent bouncing on mobile */
   }
 }
 
@@ -62,8 +62,7 @@
     width: 280px;
     flex-shrink: 0;
     background: white;
-    height: 100vh;
-    max-height: var(--app-height);
+    height: 100%;
     display: flex;
     flex-direction: column;
     border-right: 1px solid rgb(229, 231, 235);
@@ -71,6 +70,7 @@
     top: 0;
     left: 0;
     z-index: 30;
+    overscroll-behavior-y: none; /* Prevent bouncing effect */
   }
   
   .app-sidebar-header {
@@ -119,11 +119,13 @@
   }
   
   .app-main-content {
-    min-height: calc(var(--app-height) - 64px);
+    min-height: calc(100% - 64px);
     overflow-y: auto !important;
     padding: 1.5rem 0;
     background-color: rgb(249, 250, 251);
     -webkit-overflow-scrolling: touch; /* For smooth scrolling on iOS */
+    overscroll-behavior-y: none; /* Prevent bouncing effect */
+    position: relative;
   }
   
   .chat-container {
