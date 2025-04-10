@@ -157,14 +157,48 @@ async function analyzeLessonsInChunks(
     alignment: 'Strong' | 'Moderate' | 'Weak' 
   }> = {};
   
-  // Process lessons in chunks with a maximum token size
-  const MAX_LESSONS_PER_CHUNK = 3;
+  // Process lessons in chunks with a maximum lesson count per chunk
+  // Reducing from 3 to 2 to stay within token limits
+  const MAX_LESSONS_PER_CHUNK = 2;
   
   for (let i = 0; i < lessons.length; i += MAX_LESSONS_PER_CHUNK) {
     const lessonChunk = lessons.slice(i, i + MAX_LESSONS_PER_CHUNK);
     const lessonContent = lessonChunk.join("\n\n--- NEXT LESSON ---\n\n");
     
-    console.log(`Processing lesson chunk ${i / MAX_LESSONS_PER_CHUNK + 1} of ${Math.ceil(lessons.length / MAX_LESSONS_PER_CHUNK)}`);
+    console.log(`Processing lesson chunk ${Math.floor(i / MAX_LESSONS_PER_CHUNK) + 1} of ${Math.ceil(lessons.length / MAX_LESSONS_PER_CHUNK)}`);
+    
+    // Verify token count isn't too large - truncate if necessary
+    // Estimated max token size is about 15,000 tokens to stay safely under 30,000 TPM limit
+    const MAX_CONTENT_TOKENS = 15000;
+    const estimatedTokens = estimateTokenCount(lessonContent);
+    let processedLessonContent = lessonContent;
+    
+    if (estimatedTokens > MAX_CONTENT_TOKENS) {
+      console.log(`Lesson chunk too large (estimated ${estimatedTokens} tokens), truncating...`);
+      // Split into paragraphs and take only as many as needed to stay under limit
+      const paragraphs = lessonContent.split('\n\n');
+      let truncatedContent = '';
+      let currentTokenCount = 0;
+      
+      for (const paragraph of paragraphs) {
+        const paragraphTokens = estimateTokenCount(paragraph);
+        if (currentTokenCount + paragraphTokens > MAX_CONTENT_TOKENS) {
+          break;
+        }
+        truncatedContent += (truncatedContent ? '\n\n' : '') + paragraph;
+        currentTokenCount += paragraphTokens;
+      }
+      
+      processedLessonContent = truncatedContent;
+      console.log(`Truncated to approximately ${currentTokenCount} tokens`);
+    }
+    
+    // Add a delay between chunks to avoid hitting the TPM limit
+    if (i > 0) {
+      const delaySeconds = 20; // 20 second delay between chunks
+      console.log(`Delaying for ${delaySeconds} seconds to avoid rate limits...`);
+      await new Promise(resolve => setTimeout(resolve, delaySeconds * 1000));
+    }
     
     // Construct the prompt for this chunk
     const prompt = `
@@ -172,7 +206,7 @@ async function analyzeLessonsInChunks(
     on the topic of ${unitOfStudy || 'the given topic'}. Focus only on identifying standards coverage for this subset of lessons.
     
     LESSON CONTENT:
-    ${lessonContent}
+    ${processedLessonContent}
     
     Identify which California K12 content standards for ${gradeLevel} grade ${subjectArea} are covered in these lessons.
     For each standard, provide:
@@ -202,7 +236,8 @@ async function analyzeLessonsInChunks(
         return await openai.chat.completions.create({
           model: "gpt-4o",
           messages,
-          response_format: { type: "json_object" }
+          response_format: { type: "json_object" },
+          max_tokens: 4000 // Limit response size to avoid token limits
         });
       }, 3, 2000);
       
@@ -222,7 +257,7 @@ async function analyzeLessonsInChunks(
             standardsCoverage[standard.standardCode] = {
               description: standard.standardDescription,
               coverage: standard.coverage,
-              alignment: standard.alignment
+              alignment: standard.alignment as 'Strong' | 'Moderate' | 'Weak'
             };
           } else {
             // If we've seen this standard before, take the higher coverage score
@@ -230,20 +265,25 @@ async function analyzeLessonsInChunks(
               Math.max(standardsCoverage[standard.standardCode].coverage, standard.coverage);
             
             // Update alignment to the stronger of the two if applicable
-            const alignmentStrength = {
-              'Strong': 3,
-              'Moderate': 2,
-              'Weak': 1
+            // Use a function to handle type safety
+            const getAlignmentStrength = (alignment: string): number => {
+              if (alignment === 'Strong') return 3;
+              if (alignment === 'Moderate') return 2;
+              if (alignment === 'Weak') return 1;
+              return 0; // Default for unknown alignments
             };
             
-            if (alignmentStrength[standard.alignment] > alignmentStrength[standardsCoverage[standard.standardCode].alignment]) {
-              standardsCoverage[standard.standardCode].alignment = standard.alignment;
+            const currentAlignment = standardsCoverage[standard.standardCode].alignment;
+            const newAlignment = standard.alignment as 'Strong' | 'Moderate' | 'Weak';
+            
+            if (getAlignmentStrength(newAlignment) > getAlignmentStrength(currentAlignment)) {
+              standardsCoverage[standard.standardCode].alignment = newAlignment;
             }
           }
         }
       }
     } catch (error) {
-      console.error(`Error processing lesson chunk ${i / MAX_LESSONS_PER_CHUNK + 1}:`, error);
+      console.error(`Error processing lesson chunk ${Math.floor(i / MAX_LESSONS_PER_CHUNK) + 1}:`, error);
       // Continue with other chunks even if one fails
     }
   }
