@@ -81,9 +81,21 @@ export async function analyzeCurriculum(request: CurriculumAnalysisRequest): Pro
     // Parse the response
     const analysisResult: CurriculumAnalysisResult = JSON.parse(response.choices[0].message.content);
     return analysisResult;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error analyzing curriculum:", error);
-    throw new Error("Failed to analyze curriculum materials");
+    
+    // Provide more specific error messages for common API issues
+    if (error.status === 429) {
+      throw new Error("API rate limit exceeded. Please try again later or check your OpenAI API quota.");
+    } else if (error.status === 401 || error.status === 403) {
+      throw new Error("Authentication error with the OpenAI API. Please check your API key.");
+    } else if (error.code === "insufficient_quota") {
+      throw new Error("Your OpenAI API quota has been exceeded. Please check your billing details.");
+    } else if (error.message && error.message.includes("JSON")) {
+      throw new Error("Failed to parse the analysis results. Please try again.");
+    } else {
+      throw new Error("Failed to analyze curriculum materials. Please try again later.");
+    }
   }
 }
 
@@ -125,8 +137,18 @@ export async function getChatResponse(
     });
     
     return response.choices[0].message.content;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error getting chat response:", error);
-    throw new Error("Failed to get AI response");
+    
+    // Provide more specific error messages for common API issues
+    if (error.status === 429) {
+      throw new Error("API rate limit exceeded. Please try again later or check your OpenAI API quota.");
+    } else if (error.status === 401 || error.status === 403) {
+      throw new Error("Authentication error with the OpenAI API. Please check your API key.");
+    } else if (error.code === "insufficient_quota") {
+      throw new Error("Your OpenAI API quota has been exceeded. Please check your billing details.");
+    } else {
+      throw new Error("Failed to get AI response. Please try again later.");
+    }
   }
 }
