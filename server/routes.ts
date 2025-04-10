@@ -252,10 +252,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'No lesson content identified. Please upload lesson slides or materials.' });
       }
       
+      // Assessment files are optional - use placeholder if none are found
+      const assessmentContent = assessmentFiles.length > 0 
+        ? assessmentFiles.map(f => f.content).join('\n\n')
+        : "No assessment content provided.";
+      
       // Student response files are optional - use empty string if none are found
       const studentResponsesContent = responseFiles.length > 0 
         ? responseFiles.map(f => f.content).join('\n\n')
         : "No student response data provided.";
+      
+      console.log(`Processing ${lessonFiles.length} lesson files, ${assessmentFiles.length} assessment files, ${responseFiles.length} response files`);
       
       // Prepare data for analysis
       const analysisRequest = {
@@ -263,7 +270,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         subjectArea,
         unitOfStudy,
         lessonContents: lessonFiles.map(f => f.content),
-        assessmentContent: assessmentFiles.map(f => f.content).join('\n\n'),
+        assessmentContent: assessmentContent,
         studentResponses: studentResponsesContent
       };
       
@@ -297,23 +304,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Error analyzing curriculum:', error);
       
       // Pass more specific error messages to the client
-      if (error.message && error.message.includes('API rate limit exceeded')) {
-        res.status(429).json({ 
-          message: 'OpenAI API rate limit exceeded. Please try again later or contact support for assistance.',
-          errorType: 'rate_limit'
-        });
+      const errorObj: any = {
+        message: error.message || 'Failed to analyze curriculum'
+      };
+      
+      // Use specific status codes and error types based on the error
+      if (error.message && (error.message.includes('API rate limit exceeded') || error.message.includes('rate limit'))) {
+        errorObj.errorType = 'rate_limit';
+        res.status(429).json(errorObj);
       } else if (error.message && error.message.includes('quota')) {
-        res.status(402).json({ 
-          message: 'OpenAI API quota exceeded. Please contact support to update your plan.',
-          errorType: 'quota_exceeded'
-        });
-      } else if (error.message && error.message.includes('Authentication')) {
-        res.status(401).json({ 
-          message: 'Authentication error with the OpenAI API. Please check your credentials.',
-          errorType: 'auth_error'
-        });
+        errorObj.errorType = 'quota_exceeded';
+        res.status(402).json(errorObj);
+      } else if (error.message && (error.message.includes('Authentication') || error.message.includes('API key'))) {
+        errorObj.errorType = 'auth_error';
+        res.status(401).json(errorObj);
+      } else if (error.message && error.message.includes('parse')) {
+        errorObj.errorType = 'parse_error';
+        res.status(500).json(errorObj);
+      } else if (error.status && error.status < 500) {
+        // For 4xx errors, pass the error message directly
+        res.status(error.status).json(errorObj);
       } else {
-        res.status(500).json({ message: 'Failed to analyze curriculum' });
+        // Generic 500 error
+        res.status(500).json(errorObj);
       }
     }
   });
