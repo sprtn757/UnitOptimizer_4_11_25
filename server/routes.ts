@@ -293,9 +293,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         analysisId: analysis.id, 
         result: analysisResult 
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error analyzing curriculum:', error);
-      res.status(500).json({ message: 'Failed to analyze curriculum' });
+      
+      // Pass more specific error messages to the client
+      if (error.message && error.message.includes('API rate limit exceeded')) {
+        res.status(429).json({ 
+          message: 'OpenAI API rate limit exceeded. Please try again later or contact support for assistance.',
+          errorType: 'rate_limit'
+        });
+      } else if (error.message && error.message.includes('quota')) {
+        res.status(402).json({ 
+          message: 'OpenAI API quota exceeded. Please contact support to update your plan.',
+          errorType: 'quota_exceeded'
+        });
+      } else if (error.message && error.message.includes('Authentication')) {
+        res.status(401).json({ 
+          message: 'Authentication error with the OpenAI API. Please check your credentials.',
+          errorType: 'auth_error'
+        });
+      } else {
+        res.status(500).json({ message: 'Failed to analyze curriculum' });
+      }
     }
   });
   

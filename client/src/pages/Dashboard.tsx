@@ -38,12 +38,29 @@ export default function Dashboard() {
         description: "Your curriculum has been analyzed successfully.",
       });
     },
-    onError: (error) => {
-      toast({
-        title: "Analysis Failed",
-        description: error.message || "Failed to analyze curriculum",
-        variant: "destructive",
-      });
+    onError: (error: any) => {
+      // Check for API quota issues
+      const errorMessage = error.message || "Failed to analyze curriculum";
+      
+      if (errorMessage.includes("quota") || errorMessage.includes("rate limit")) {
+        toast({
+          title: "API Limit Reached",
+          description: (
+            <div className="space-y-2">
+              <p>{errorMessage}</p>
+              <p className="text-sm">The OpenAI API quota has been reached. Please try again later or contact support.</p>
+            </div>
+          ),
+          variant: "destructive",
+          duration: 8000, // Longer duration for this important message
+        });
+      } else {
+        toast({
+          title: "Analysis Failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
     },
   });
 
