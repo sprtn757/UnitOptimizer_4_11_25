@@ -89,7 +89,7 @@ export function ChatInterface({ analysisId, isAnalysisComplete }: ChatInterfaceP
 
       <div id="chat-container" className="border border-neutral-200 rounded-lg h-96 flex flex-col">
         {/* Chat Messages */}
-        <div id="chat-messages" className="flex-1 overflow-y-auto p-4 space-y-4 overscroll-contain">
+        <div id="chat-messages" className="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-4 overscroll-contain">
           {/* Initial System Message */}
           {!isLoading && messages.length === 0 && (
             <div className="flex items-start">
@@ -107,7 +107,7 @@ export function ChatInterface({ analysisId, isAnalysisComplete }: ChatInterfaceP
           )}
 
           {/* Render Messages */}
-          {messages.map((msg) => (
+          {messages.map((msg: Message) => (
             <div key={msg.id} className={cn("flex items-start", msg.isUser && "justify-end")}>
               {!msg.isUser && (
                 <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center mr-3 flex-shrink-0">
@@ -118,7 +118,7 @@ export function ChatInterface({ analysisId, isAnalysisComplete }: ChatInterfaceP
               )}
               
               <div className={cn(
-                "rounded-lg p-3 max-w-[80%]",
+                "rounded-lg p-3 max-w-[75%]",
                 msg.isUser ? "bg-primary-light text-white" : "bg-neutral-100"
               )}>
                 <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>

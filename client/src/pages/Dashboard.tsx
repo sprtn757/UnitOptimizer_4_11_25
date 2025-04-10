@@ -110,7 +110,7 @@ export default function Dashboard() {
       )}
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col h-full">
         {/* Top bar */}
         <div className="bg-white shadow-sm px-4 py-3 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center space-x-2">
@@ -142,7 +142,7 @@ export default function Dashboard() {
         </div>
 
         {/* Main scrollable content area */}
-        <main className="flex-1 overflow-y-auto bg-neutral-50 pb-16">
+        <main className="flex-1 overflow-y-auto scrollbar-thin bg-neutral-50 pb-16">
           <div className="max-w-6xl mx-auto px-4 py-6">
             <Card className="mb-6">
               <CardContent className="p-6">

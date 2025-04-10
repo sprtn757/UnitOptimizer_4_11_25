@@ -83,7 +83,7 @@ export function AnalysisResults({ result, isVisible }: AnalysisResultsProps) {
   };
 
   return (
-    <div id="analysis-results" className={cn("bg-white rounded-lg shadow-sm p-6 mb-6", isVisible ? 'block' : 'hidden')}>
+    <div id="analysis-results" className={cn("bg-white rounded-lg shadow-sm p-6 mb-6 max-h-[800px] overflow-y-auto scrollbar-thin", isVisible ? 'block' : 'hidden')}>
       <div className="mb-4">
         <h3 className="text-lg font-medium">Analysis Results</h3>
         <p className="text-neutral-600 text-sm">
