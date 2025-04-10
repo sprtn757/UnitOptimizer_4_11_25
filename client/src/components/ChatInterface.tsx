@@ -87,9 +87,9 @@ export function ChatInterface({ analysisId, isAnalysisComplete }: ChatInterfaceP
     <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
       <h3 className="text-lg font-medium mb-4">AI Analysis & Chat</h3>
 
-      <div id="chat-container" className="border border-neutral-200 rounded-lg h-96 flex flex-col">
+      <div className="chat-container">
         {/* Chat Messages */}
-        <div id="chat-messages" className="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-4 overscroll-contain">
+        <div className="chat-messages scrollbar-thin">
           {/* Initial System Message */}
           {!isLoading && messages.length === 0 && (
             <div className="flex items-start">
@@ -154,7 +154,7 @@ export function ChatInterface({ analysisId, isAnalysisComplete }: ChatInterfaceP
         </div>
 
         {/* Chat Input */}
-        <form onSubmit={handleSubmit} className="border-t border-neutral-200 p-3 flex items-center">
+        <form onSubmit={handleSubmit} className="chat-input">
           <Textarea 
             id="chat-input" 
             value={message}
