@@ -53,6 +53,21 @@ export function SelectionForm({ onSelectionChange }: SelectionFormProps) {
 
   const handleGradeLevelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setGradeLevel(e.target.value);
+    
+    // Reset document body overflow to ensure scrolling works after selection
+    setTimeout(() => {
+      document.body.classList.remove('no-scroll');
+      document.documentElement.classList.remove('no-scroll');
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+      document.body.style.position = '';
+      document.documentElement.style.position = '';
+      document.body.style.overscrollBehavior = '';
+      
+      // Ensure whole document is scrollable
+      document.body.style.height = 'auto';
+      document.documentElement.style.height = 'auto';
+    }, 100);
   };
 
   const handleSubjectAreaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -60,16 +75,27 @@ export function SelectionForm({ onSelectionChange }: SelectionFormProps) {
     
     // Reset document body overflow to ensure scrolling works after selection
     setTimeout(() => {
-      document.body.style.overflow = 'auto';
-      document.documentElement.style.overflow = 'auto';
+      document.body.classList.remove('no-scroll');
+      document.documentElement.classList.remove('no-scroll');
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+      document.body.style.position = '';
+      document.documentElement.style.position = '';
+      document.body.style.overscrollBehavior = '';
       
       // Also reset all parent containers that might affect scrolling
       const mainContent = document.querySelector('.app-main-content');
       if (mainContent) {
         (mainContent as HTMLElement).style.overflow = 'auto';
         (mainContent as HTMLElement).style.overflowY = 'auto';
+        (mainContent as HTMLElement).style.overscrollBehavior = '';
+        (mainContent as HTMLElement).style.position = '';
       }
-    }, 0);
+      
+      // Ensure whole document is scrollable
+      document.body.style.height = 'auto';
+      document.documentElement.style.height = 'auto';
+    }, 100);
   };
 
   return (

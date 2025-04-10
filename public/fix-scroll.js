@@ -1,48 +1,106 @@
-// Fix for scroll issues in mobile browsers
+// Comprehensive fix for scroll issues in mobile browsers
 (function() {
+  // Watch for DOM changes to apply fixes
+  const observer = new MutationObserver(() => {
+    fixScrollIssues();
+  });
+  
   // First, set the --app-height CSS variable based on the window height
-  const setAppHeight = () => {
+  const fixScrollIssues = () => {
     const doc = document.documentElement;
     doc.style.setProperty('--app-height', `${window.innerHeight}px`);
     
-    // Also ensure body and root have correct overflow settings and prevent bouncing
-    document.body.style.overflow = 'auto';
-    document.body.style.overflowX = 'hidden';
-    document.body.style.overscrollBehavior = 'none';
-    document.body.style.position = 'relative';
-    
-    const rootElement = document.getElementById('root');
-    rootElement.style.overflow = 'auto';
-    rootElement.style.overscrollBehavior = 'none';
-    rootElement.style.position = 'relative';
-    rootElement.style.height = '100%';
-    
-    // Apply overscroll behavior to main content elements
-    document.querySelectorAll('.app-main-content, .app-sidebar-content').forEach(el => {
-      el.style.overscrollBehavior = 'none';
-    });
-    
-    // Fix for select elements and dropdowns
-    document.querySelectorAll('select').forEach(select => {
-      select.style.webkitAppearance = 'menulist';
-      select.style.appearance = 'menulist';
+    // Use requestAnimationFrame to ensure we're not fighting against the browser
+    requestAnimationFrame(() => {
+      // Reset body and html to default state
+      document.body.classList.remove('no-scroll');
+      document.documentElement.classList.remove('no-scroll');
+      
+      // Ensure the body has proper scroll settings
+      document.body.style.overflow = '';
+      document.body.style.overflowX = 'hidden';
+      document.body.style.height = 'auto';
+      document.body.style.position = '';
+      document.body.style.overscrollBehavior = 'none';
+      
+      // Set document styles
+      document.documentElement.style.height = 'auto';
+      document.documentElement.style.overflow = '';
+      document.documentElement.style.overscrollBehavior = 'none';
+      
+      // Handle root element
+      const rootElement = document.getElementById('root');
+      if (rootElement) {
+        rootElement.style.height = '100%';
+        rootElement.style.overflow = '';
+        rootElement.style.overscrollBehavior = 'none';
+        rootElement.style.position = '';
+      }
+      
+      // Apply overscroll behavior to main content elements
+      document.querySelectorAll('.app-main-content, .app-sidebar-content').forEach(el => {
+        el.style.overscrollBehavior = 'none';
+      });
+      
+      // Fix for select elements and dropdowns
+      document.querySelectorAll('select').forEach(select => {
+        select.style.webkitAppearance = 'menulist';
+        select.style.appearance = 'menulist';
+        
+        // Add event listener to fix scroll after select interaction
+        select.addEventListener('change', () => {
+          setTimeout(() => {
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
+            document.body.style.height = 'auto';
+            document.documentElement.style.height = 'auto';
+            document.body.style.position = '';
+            document.documentElement.style.position = '';
+          }, 100);
+        }, { once: false });
+      });
     });
   };
 
-  // Set the height initially
-  setAppHeight();
+  // Set the height initially and fix scrolling
+  fixScrollIssues();
   
-  // Update the height whenever the window is resized
-  window.addEventListener('resize', setAppHeight);
+  // Update whenever window is resized
+  window.addEventListener('resize', fixScrollIssues);
   
   // Also fix when device orientation changes
-  window.addEventListener('orientationchange', setAppHeight);
+  window.addEventListener('orientationchange', fixScrollIssues);
   
-  // Disable pull-to-refresh on mobile (iOS Safari)
-  document.body.addEventListener('touchmove', function(e) {
+  // Fix after user interaction
+  document.addEventListener('touchend', () => {
+    setTimeout(fixScrollIssues, 100);
+  });
+  
+  // Observe DOM changes
+  observer.observe(document.documentElement, { 
+    childList: true, 
+    subtree: true, 
+    attributes: true,
+    attributeFilter: ['style', 'class']
+  });
+  
+  // Workaround for iOS Safari bounce effect when scrolling
+  document.addEventListener('touchmove', function(e) {
     // Allow scrolling only within elements that should scroll
-    if (!e.target.closest('.app-main-content, .app-sidebar-content, .scrollable, select, textarea')) {
+    const target = e.target;
+    const isScrollable = 
+      target.classList.contains('scrollable') || 
+      target.closest('.app-main-content, .app-sidebar-content, .scrollable') ||
+      target.tagName === 'SELECT' || 
+      target.tagName === 'TEXTAREA' ||
+      target.tagName === 'INPUT';
+      
+    if (!isScrollable) {
       e.preventDefault();
     }
   }, { passive: false });
+  
+  // Fix scroll issues when content is loaded or DOM changes
+  window.addEventListener('load', fixScrollIssues);
+  document.addEventListener('DOMContentLoaded', fixScrollIssues);
 })();
