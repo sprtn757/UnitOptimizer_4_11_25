@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
+import { AppContainer } from "@/components/AppContainer";
 
 function Router() {
   return (
@@ -17,8 +18,10 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router />
-      <Toaster />
+      <AppContainer>
+        <Router />
+        <Toaster />
+      </AppContainer>
     </QueryClientProvider>
   );
 }

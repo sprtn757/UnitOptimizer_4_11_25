@@ -8,29 +8,35 @@
   }
 
   :root {
-    --app-height: 100vh;
+    --vh: 1vh;
   }
   
+  /* Complete reset for html and body to prevent any scrolling */
   html, body {
-    height: 100%; /* Use percentage instead of vh */
     margin: 0;
     padding: 0;
-    position: relative;
-    overscroll-behavior: none; /* Prevent bouncing on mobile */
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch; /* Smoother scrolling on iOS */
+    /* Fixed positioning to prevent any scrolling at document level */
+    position: fixed;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+    /* Enhanced overscroll prevention */
+    overscroll-behavior: none;
+    touch-action: none;
+    -webkit-overflow-scrolling: auto;
+    /* Improved performance with hardware acceleration */
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
   }
   
-  /* Styling for the body element */
+  /* Base styling for the body */
   body {
-    touch-action: pan-y; /* Only allow vertical scrolling */
     @apply font-sans antialiased bg-background text-foreground;
   }
   
-  /* Force scrollbar visibility on webkit browsers */
+  /* Completely disable scrolling on body */
   body::-webkit-scrollbar {
-    width: 1px;
-    background: transparent;
+    display: none;
   }
   
   /* Prevent iOS from zooming in on form elements */
@@ -43,16 +49,47 @@
   select,
   textarea {
     font-size: 16px !important;
-    max-height: 999999px; /* Prevent font boosting */
+    /* Prevent font resizing */
+    max-height: 999999px;
+    /* Disable iOS text size adjust */
+    -webkit-text-size-adjust: 100%;
   }
 
+  /* Root container takes full viewport */
   #root {
+    width: 100%;
     height: 100%;
     position: relative;
-    overflow-x: hidden;
     display: flex;
     flex-direction: column;
-    overscroll-behavior-y: none; /* Prevent bouncing on mobile */
+  }
+  
+  /* Container for the entire app, uses fixed size */
+  .app-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    /* Use CSS variable for height to handle mobile browsers properly */
+    height: 100vh; /* fallback */
+    height: calc(var(--vh, 1vh) * 100);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* Main scrollable container */
+  .app-scroll-container {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    /* Enable momentum scrolling on iOS */
+    position: relative;
+    /* Improve performance */
+    will-change: transform;
+    /* Prevent bouncing effect */
+    overscroll-behavior-y: none;
   }
 }
 

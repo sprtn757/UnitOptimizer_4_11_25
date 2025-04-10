@@ -25,43 +25,7 @@ export default function Dashboard() {
   const isMobile = useIsMobile();
   const { toast } = useToast();
   
-  // Set correct viewport height for mobile
-  useEffect(() => {
-    const setAppHeight = () => {
-      document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
-    };
-
-    setAppHeight();
-    window.addEventListener('resize', setAppHeight);
-
-    // Create and inject a script to fix scrolling issues
-    const scrollFixScript = document.createElement('script');
-    scrollFixScript.innerHTML = `
-      // Fix scrolling issues that might occur during user interaction
-      function fixScrolling() {
-        document.body.style.overflow = 'auto';
-        document.documentElement.style.overflow = 'auto';
-        document.documentElement.style.overflowY = 'auto';
-        
-        // Add event listeners to restore scrolling after unit selection
-        document.addEventListener('change', function() {
-          setTimeout(function() {
-            document.body.style.overflow = 'auto';
-            document.documentElement.style.overflow = 'auto';
-          }, 100);
-        });
-      }
-      
-      // Call immediately and also add to window load event
-      fixScrolling();
-      window.addEventListener('load', fixScrolling);
-    `;
-    document.head.appendChild(scrollFixScript);
-    
-    return () => {
-      window.removeEventListener('resize', setAppHeight);
-    };
-  }, []);
+  // No need for any scroll handling here - AppContainer handles it all
 
   const analysisMutation = useMutation({
     mutationFn: analyzeCurriculum,
@@ -89,20 +53,6 @@ export default function Dashboard() {
     unitOfStudy: string;
   }) => {
     setCurriculumSelection(selection);
-    
-    // If unit of study was selected, ensure scrolling is enabled
-    if (selection.unitOfStudy) {
-      setTimeout(() => {
-        document.body.style.overflow = 'auto';
-        document.documentElement.style.overflow = 'auto';
-        
-        const mainContent = document.querySelector('.app-main-content');
-        if (mainContent) {
-          (mainContent as HTMLElement).style.overflow = 'auto';
-          (mainContent as HTMLElement).style.overflowY = 'auto';
-        }
-      }, 100);
-    }
   };
 
   const handleFilesUploaded = (files: UploadedFile[]) => {
@@ -132,19 +82,6 @@ export default function Dashboard() {
       ...curriculumSelection,
       fileIds: uploadedFiles.map((file) => file.id),
     });
-    
-    // Ensure scrolling is enabled after processing files
-    setTimeout(() => {
-      document.body.style.overflow = 'auto';
-      document.documentElement.style.overflow = 'auto';
-      document.documentElement.style.position = '';
-      
-      const mainContent = document.querySelector('.app-main-content');
-      if (mainContent) {
-        (mainContent as HTMLElement).style.overflow = 'auto';
-        (mainContent as HTMLElement).style.overflowY = 'auto';
-      }
-    }, 200);
   };
 
   const toggleMobileSidebar = () => {
