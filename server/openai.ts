@@ -78,40 +78,219 @@ export interface CurriculumAnalysisResult {
   overallSummary: string;
 }
 
+/**
+ * Estimates token count based on string length (rough approximation)
+ * @param text Text to estimate token count for
+ * @returns Estimated token count
+ */
+function estimateTokenCount(text: string): number {
+  // GPT tokenization is roughly 4 characters per token on average
+  return Math.ceil(text.length / 4);
+}
+
+/**
+ * Chunks text to stay within token limits
+ * @param text Text to chunk
+ * @param maxTokens Maximum tokens per chunk
+ * @returns Array of chunked text
+ */
+function chunkText(text: string, maxTokens: number = 8000): string[] {
+  const estimatedTokens = estimateTokenCount(text);
+  
+  // If text is already under token limit, return as is
+  if (estimatedTokens <= maxTokens) {
+    return [text];
+  }
+  
+  // Split text into chunks
+  const chunks: string[] = [];
+  const paragraphs = text.split('\n\n');
+  let currentChunk = '';
+  
+  for (const paragraph of paragraphs) {
+    const paragraphTokens = estimateTokenCount(paragraph);
+    const currentChunkTokens = estimateTokenCount(currentChunk);
+    
+    // If adding this paragraph would exceed the limit, start a new chunk
+    if (currentChunkTokens + paragraphTokens > maxTokens && currentChunk) {
+      chunks.push(currentChunk);
+      currentChunk = paragraph;
+    } else {
+      // Otherwise add to current chunk
+      currentChunk = currentChunk ? `${currentChunk}\n\n${paragraph}` : paragraph;
+    }
+  }
+  
+  // Don't forget the last chunk
+  if (currentChunk) {
+    chunks.push(currentChunk);
+  }
+  
+  return chunks;
+}
+
+/**
+ * Analyzes lessons in chunks to avoid token limits
+ * @param lessons Array of lesson contents
+ * @param gradeLevel Grade level
+ * @param subjectArea Subject area
+ * @returns Combined analysis of standards coverage
+ */
+async function analyzeLessonsInChunks(
+  lessons: string[], 
+  gradeLevel: string, 
+  subjectArea: string, 
+  unitOfStudy: string
+): Promise<{
+  coveredStandards: string[],
+  standardsCoverage: Record<string, { 
+    description: string, 
+    coverage: number, 
+    alignment: 'Strong' | 'Moderate' | 'Weak' 
+  }>
+}> {
+  // Initialize result
+  const coveredStandards: string[] = [];
+  const standardsCoverage: Record<string, { 
+    description: string, 
+    coverage: number, 
+    alignment: 'Strong' | 'Moderate' | 'Weak' 
+  }> = {};
+  
+  // Process lessons in chunks with a maximum token size
+  const MAX_LESSONS_PER_CHUNK = 3;
+  
+  for (let i = 0; i < lessons.length; i += MAX_LESSONS_PER_CHUNK) {
+    const lessonChunk = lessons.slice(i, i + MAX_LESSONS_PER_CHUNK);
+    const lessonContent = lessonChunk.join("\n\n--- NEXT LESSON ---\n\n");
+    
+    console.log(`Processing lesson chunk ${i / MAX_LESSONS_PER_CHUNK + 1} of ${Math.ceil(lessons.length / MAX_LESSONS_PER_CHUNK)}`);
+    
+    // Construct the prompt for this chunk
+    const prompt = `
+    As an educational expert, analyze these curriculum materials for ${gradeLevel} grade ${subjectArea} 
+    on the topic of ${unitOfStudy || 'the given topic'}. Focus only on identifying standards coverage for this subset of lessons.
+    
+    LESSON CONTENT:
+    ${lessonContent}
+    
+    Identify which California K12 content standards for ${gradeLevel} grade ${subjectArea} are covered in these lessons.
+    For each standard, provide:
+    1. The standard code
+    2. The standard description
+    3. A coverage score (0-100) indicating how thoroughly the standard is addressed
+    4. An alignment rating (Strong/Moderate/Weak)
+    
+    Provide your analysis in JSON format with:
+    - standards: Array of objects with standardCode, standardDescription, coverage, and alignment
+    `;
+    
+    // Type the messages array
+    const messages: Array<OpenAI.Chat.ChatCompletionMessageParam> = [
+      { 
+        role: "system", 
+        content: "You are an expert educational analyst specializing in curriculum alignment and assessment." 
+      } as OpenAI.Chat.ChatCompletionSystemMessageParam,
+      { 
+        role: "user", 
+        content: prompt 
+      } as OpenAI.Chat.ChatCompletionUserMessageParam
+    ];
+    
+    try {
+      const response = await withExponentialBackoff(async () => {
+        return await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages,
+          response_format: { type: "json_object" }
+        });
+      }, 3, 2000);
+      
+      const content = response.choices[0].message.content || "";
+      const result = JSON.parse(content);
+      
+      // Process and merge results
+      if (result.standards && Array.isArray(result.standards)) {
+        for (const standard of result.standards) {
+          // Add to covered standards if not already present
+          if (!coveredStandards.includes(standard.standardCode)) {
+            coveredStandards.push(standard.standardCode);
+          }
+          
+          // Update standards coverage
+          if (!standardsCoverage[standard.standardCode]) {
+            standardsCoverage[standard.standardCode] = {
+              description: standard.standardDescription,
+              coverage: standard.coverage,
+              alignment: standard.alignment
+            };
+          } else {
+            // If we've seen this standard before, take the higher coverage score
+            standardsCoverage[standard.standardCode].coverage = 
+              Math.max(standardsCoverage[standard.standardCode].coverage, standard.coverage);
+            
+            // Update alignment to the stronger of the two if applicable
+            const alignmentStrength = {
+              'Strong': 3,
+              'Moderate': 2,
+              'Weak': 1
+            };
+            
+            if (alignmentStrength[standard.alignment] > alignmentStrength[standardsCoverage[standard.standardCode].alignment]) {
+              standardsCoverage[standard.standardCode].alignment = standard.alignment;
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`Error processing lesson chunk ${i / MAX_LESSONS_PER_CHUNK + 1}:`, error);
+      // Continue with other chunks even if one fails
+    }
+  }
+  
+  return { coveredStandards, standardsCoverage };
+}
+
 export async function analyzeCurriculum(request: CurriculumAnalysisRequest): Promise<CurriculumAnalysisResult> {
   try {
-    // Use exponential backoff for the API call
+    console.log(`Starting curriculum analysis for ${request.gradeLevel} grade ${request.subjectArea}, with ${request.lessonContents.length} lessons`);
+    
+    // Step 1: Process lessons in chunks to identify standards coverage
+    const { coveredStandards, standardsCoverage } = await analyzeLessonsInChunks(
+      request.lessonContents,
+      request.gradeLevel,
+      request.subjectArea,
+      request.unitOfStudy
+    );
+    
+    console.log(`Standards analysis complete. Identified ${coveredStandards.length} standards.`);
+    
+    // Step 2: Process assessment and student responses
+    const assessmentAnalysisPrompt = `
+    As an educational expert, analyze these assessment materials and student responses for ${request.gradeLevel} grade ${request.subjectArea} 
+    on the topic of ${request.unitOfStudy || 'the given topic'}.
+    
+    The curriculum covers these standards: ${JSON.stringify(coveredStandards)}
+    
+    ASSESSMENT:
+    ${request.assessmentContent || 'No assessment provided'}
+    
+    STUDENT RESPONSES:
+    ${request.studentResponses || 'No student responses provided'}
+    
+    Based on these materials:
+    1. Identify student performance issues related to specific standards
+    2. Provide specific recommendations to improve alignment and instruction
+    
+    Provide your analysis in JSON format with these sections:
+    - studentPerformanceIssues: Array of issues with issue name, relatedStandards, affectedQuestions, and description
+    - recommendations: Array of suggestions with recommendation, targetStandards, priority (High/Medium/Low), and description
+    - overallSummary: A brief summary of the analysis
+    `;
+    
+    // Step 3: Combine the standards analysis with assessment analysis
     return await withExponentialBackoff(async () => {
-      // Prepare the contents for analysis
-      const lessonContent = request.lessonContents.join("\n\n--- NEXT LESSON ---\n\n");
-      
-      // Construct the prompt
-      const prompt = `
-      As an educational expert, analyze these curriculum materials for ${request.gradeLevel} grade ${request.subjectArea} 
-      on the topic of ${request.unitOfStudy || 'the given topic'}. Identify gaps and misalignments with California K12 content standards.
-      
-      LESSON CONTENT:
-      ${lessonContent}
-      
-      ASSESSMENT:
-      ${request.assessmentContent || 'No assessment provided'}
-      
-      STUDENT RESPONSES:
-      ${request.studentResponses || 'No student responses provided'}
-      
-      Based on these materials:
-      1. Identify standards that are insufficiently covered
-      2. Find weaknesses in student performance related to specific standards
-      3. Provide specific recommendations to improve alignment and instruction
-      
-      Provide your analysis in JSON format with these sections:
-      - standardsGaps: Array of gaps with standardCode, standardDescription, coverage (0-100), alignment (Strong/Moderate/Weak), gapDetails, and affectedQuestions
-      - studentPerformanceIssues: Array of issues with issue name, relatedStandards, affectedQuestions, and description
-      - recommendations: Array of suggestions with recommendation, targetStandards, priority (High/Medium/Low), and description
-      - overallSummary: A brief summary of the analysis
-      `;
-      
-      // Type the messages array to satisfy TypeScript
+      // Create the final analysis messages
       const messages: Array<OpenAI.Chat.ChatCompletionMessageParam> = [
         { 
           role: "system", 
@@ -119,9 +298,11 @@ export async function analyzeCurriculum(request: CurriculumAnalysisRequest): Pro
         } as OpenAI.Chat.ChatCompletionSystemMessageParam,
         { 
           role: "user", 
-          content: prompt 
+          content: assessmentAnalysisPrompt 
         } as OpenAI.Chat.ChatCompletionUserMessageParam
       ];
+      
+      console.log("Generating final analysis");
       
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
@@ -133,7 +314,35 @@ export async function analyzeCurriculum(request: CurriculumAnalysisRequest): Pro
       
       // Parse the response
       try {
-        const analysisResult: CurriculumAnalysisResult = JSON.parse(content);
+        const assessmentResult = JSON.parse(content);
+        
+        // Create standards gaps from our standards coverage analysis
+        const standardsGaps: StandardGap[] = [];
+        
+        for (const standardCode of coveredStandards) {
+          const coverage = standardsCoverage[standardCode];
+          
+          // If coverage is below 80, consider it a gap
+          if (coverage.coverage < 80) {
+            standardsGaps.push({
+              standardCode,
+              standardDescription: coverage.description,
+              coverage: coverage.coverage,
+              alignment: coverage.alignment,
+              gapDetails: `This standard is only covered at ${coverage.coverage}% with ${coverage.alignment.toLowerCase()} alignment.`,
+              affectedQuestions: []
+            });
+          }
+        }
+        
+        // Combine everything into final result
+        const analysisResult: CurriculumAnalysisResult = {
+          standardsGaps,
+          studentPerformanceIssues: assessmentResult.studentPerformanceIssues || [],
+          recommendations: assessmentResult.recommendations || [],
+          overallSummary: assessmentResult.overallSummary || "Analysis completed successfully."
+        };
+        
         return analysisResult;
       } catch (parseError) {
         console.error("Error parsing OpenAI response:", parseError);
