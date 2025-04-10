@@ -64,24 +64,36 @@ export async function extractTextFromFile(fileBuffer: Buffer, fileName: string):
       case '.xlsx':
       case '.xls':
         try {
-          // Call our dedicated Excel processor script
-          const { stdout } = await execAsync(`node server/excelProcessor.js "${tempFilePath}"`);
+          // Instead of calling via command line, let's require the module directly to avoid path issues
+          // Import the Excel processor directly
+          const excelProcessor = require('./excelProcessor');
           
-          extractedText = stdout;
+          // Process the Excel file
+          extractedText = excelProcessor.processExcelFile(tempFilePath);
           console.log("Successfully processed Excel file: " + fileName);
         } catch (xlsxError: any) {
           console.error("Excel processing error:", xlsxError);
           
-          // Try a simpler approach for Excel files
+          // Try a different approach using the XLSX library directly
           try {
-            // Just read the file as UTF-8 and see if we get anything useful
-            extractedText = await fs.promises.readFile(tempFilePath, 'utf-8');
-            if (!extractedText || extractedText.length < 10) {
-              throw new Error("Could not extract meaningful text");
+            const workbook = XLSX.readFile(tempFilePath);
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet);
+            extractedText = JSON.stringify(jsonData, null, 2);
+            console.log("Used XLSX library directly for Excel: " + fileName);
+          } catch (xlsxError2) {
+            // Last resort fallback
+            try {
+              // Just read the file as UTF-8 and see if we get anything useful
+              extractedText = await fs.promises.readFile(tempFilePath, 'utf-8');
+              if (!extractedText || extractedText.length < 10) {
+                throw new Error("Could not extract meaningful text");
+              }
+              console.log("Used text fallback method for Excel: " + fileName);
+            } catch (fallbackError) {
+              throw new Error(`Excel processing error: ${xlsxError.message || String(xlsxError)}`);
             }
-            console.log("Used text fallback method for Excel: " + fileName);
-          } catch (fallbackError) {
-            throw new Error(`Excel processing error: ${xlsxError.message || String(xlsxError)}`);
           }
         }
         break;
