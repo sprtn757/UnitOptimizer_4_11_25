@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Label } from "@/components/ui/label";
 import { useQuery } from "@tanstack/react-query";
 
@@ -37,8 +37,56 @@ interface SelectionFormProps {
 }
 
 export function SelectionForm({ onSelectionChange }: SelectionFormProps) {
+  // Use refs instead of state to prevent re-renders on selection
   const [gradeLevel, setGradeLevel] = useState<string>("");
   const [subjectArea, setSubjectArea] = useState<string>("");
+  const formRef = useRef<HTMLDivElement>(null);
+  const gradeLevelRef = useRef<HTMLSelectElement>(null);
+  const subjectAreaRef = useRef<HTMLSelectElement>(null);
+
+  // More reliable event handling with refs
+  useEffect(() => {
+    // Handle the selection changes on blur instead of change
+    // This avoids the state update during dropdown interaction
+    const handleSelectionUpdates = () => {
+      const grade = gradeLevelRef.current?.value || "";
+      const subject = subjectAreaRef.current?.value || "";
+      
+      if (grade && subject) {
+        if (grade !== gradeLevel) {
+          setGradeLevel(grade);
+        }
+        
+        if (subject !== subjectArea) {
+          setSubjectArea(subject);
+        }
+        
+        if (grade && subject) {
+          onSelectionChange({
+            gradeLevel: grade,
+            subjectArea: subject,
+            unitOfStudy: "general", // Default value since we removed the dropdown
+          });
+        }
+      }
+    };
+    
+    // Add blur event listeners
+    const gradeSelect = gradeLevelRef.current;
+    const subjectSelect = subjectAreaRef.current;
+    
+    if (gradeSelect && subjectSelect) {
+      gradeSelect.addEventListener('blur', handleSelectionUpdates);
+      subjectSelect.addEventListener('blur', handleSelectionUpdates);
+    }
+    
+    return () => {
+      if (gradeSelect && subjectSelect) {
+        gradeSelect.removeEventListener('blur', handleSelectionUpdates);
+        subjectSelect.removeEventListener('blur', handleSelectionUpdates);
+      }
+    };
+  }, [gradeLevel, subjectArea, onSelectionChange]);
 
   // Notify parent component when selections change
   useEffect(() => {
@@ -50,66 +98,33 @@ export function SelectionForm({ onSelectionChange }: SelectionFormProps) {
       });
     }
   }, [gradeLevel, subjectArea, onSelectionChange]);
-
-  // Generic function to handle scrolling issues after dropdown interaction
-  const fixScrollAfterSelect = () => {
-    try {
-      // Instead of manipulating scrolling properties directly,
-      // Just ensure the document is at a stable state
-      document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
-      document.body.style.height = 'auto';
-      document.documentElement.style.height = 'auto';
-      
-      // Reset overscroll behavior
-      document.body.style.overscrollBehavior = 'none';
-      document.documentElement.style.overscrollBehavior = 'none';
-      
-      // For mobile Safari specifically
-      document.body.style.position = 'static';
-      document.documentElement.style.position = 'static';
-    } catch (e) {
-      console.error("Error fixing scroll after select:", e);
-    }
-  };
-
-  // Handle focus, blur and change events for better mobile experience
-  const handleFocus = () => {
-    // We don't set no-scroll here to allow scrolling the dropdown
-  };
   
-  const handleBlur = () => {
-    // When focus leaves the select, restore scrolling
-    fixScrollAfterSelect();
+  // Most basic scroll fixing function possible
+  const fixScroll = () => {
+    document.body.style.overflow = 'auto';
+    document.body.style.position = 'static';
+    document.body.style.height = 'auto';
   };
 
-  const handleGradeLevelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setGradeLevel(e.target.value);
-    // Use requestAnimationFrame to wait for browser to complete its work
-    requestAnimationFrame(() => {
-      fixScrollAfterSelect();
-    });
-  };
-
-  const handleSubjectAreaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSubjectArea(e.target.value);
-    // Use requestAnimationFrame to wait for browser to complete its work
-    requestAnimationFrame(() => {
-      fixScrollAfterSelect();
-    });
+  // Direct change handler that uses the DOM instead of state updates
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    // Don't update state here - wait until blur
+    
+    // Just ensure the scrolling is working
+    setTimeout(fixScroll, 300);
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4" ref={formRef}>
       <div>
         <Label htmlFor="grade-level" className="block text-sm font-medium text-neutral-700 mb-1">
           Grade Level
         </Label>
         <select 
           id="grade-level" 
-          value={gradeLevel} 
-          onChange={handleGradeLevelChange}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
+          ref={gradeLevelRef}
+          defaultValue=""
+          onChange={handleChange}
           className="native-select w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
         >
           <option value="" disabled>Select grade</option>
@@ -127,10 +142,9 @@ export function SelectionForm({ onSelectionChange }: SelectionFormProps) {
         </Label>
         <select 
           id="subject-area" 
-          value={subjectArea} 
-          onChange={handleSubjectAreaChange}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
+          ref={subjectAreaRef}
+          defaultValue=""
+          onChange={handleChange}
           className="native-select w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
         >
           <option value="" disabled>Select subject</option>
