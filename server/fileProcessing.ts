@@ -3,6 +3,12 @@ import * as path from 'path';
 import * as os from 'os';
 import { promisify } from 'util';
 import { exec } from 'child_process';
+import * as XLSX from 'xlsx';
+// Import PDF parser dynamically to avoid errors with test files
+const pdfParse = (buffer: Buffer) => {
+  const parse = require('pdf-parse');
+  return parse(buffer);
+};
 
 const execAsync = promisify(exec);
 
@@ -33,9 +39,22 @@ export async function extractTextFromFile(fileBuffer: Buffer, fileName: string):
         break;
         
       case '.pdf':
-        // Use pdf-parse (we'll use the exec approach since we can't import directly)
-        const { stdout: pdfText } = await execAsync(`npx pdf-parse "${tempFilePath}"`);
-        extractedText = pdfText;
+        // Use pdf-parse library directly
+        try {
+          // Read the PDF file
+          const pdfBuffer = await fs.promises.readFile(tempFilePath);
+          
+          // Parse the PDF
+          const pdfData = await pdfParse(pdfBuffer);
+          
+          // Extract the text
+          extractedText = pdfData.text || '';
+          
+          console.log("Successfully processed PDF file: " + fileName);
+        } catch (pdfError: any) {
+          console.error("PDF processing error:", pdfError);
+          throw new Error(`PDF processing error: ${pdfError.message || String(pdfError)}`);
+        }
         break;
         
       case '.docx':
@@ -47,9 +66,24 @@ export async function extractTextFromFile(fileBuffer: Buffer, fileName: string):
         
       case '.xlsx':
       case '.xls':
-        // Use xlsx for Excel processing - quotes around path to handle spaces in filenames
-        const { stdout: xlsxText } = await execAsync(`npx xlsx "${tempFilePath}" --sheet=0 --raw`);
-        extractedText = xlsxText;
+        // Use xlsx library directly instead of command line
+        try {
+          // Read the workbook
+          const workbook = XLSX.readFile(tempFilePath);
+          
+          // Get the first worksheet
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          
+          // Convert to JSON and then to string
+          const jsonData = XLSX.utils.sheet_to_json(worksheet);
+          extractedText = JSON.stringify(jsonData, null, 2);
+          
+          console.log("Successfully processed Excel file: " + fileName);
+        } catch (xlsxError: any) {
+          console.error("Excel processing error:", xlsxError);
+          throw new Error(`Excel processing error: ${xlsxError.message || String(xlsxError)}`);
+        }
         break;
         
       case '.pptx':
