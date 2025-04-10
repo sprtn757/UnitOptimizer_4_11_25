@@ -181,30 +181,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'No valid files found' });
       }
       
-      // Categorize files (simple categorization based on file type/name)
-      const lessonFiles = files.filter(f => f.name.toLowerCase().includes('lesson'));
-      const assessmentFiles = files.filter(f => 
-        f.name.toLowerCase().includes('assessment') || 
-        f.name.toLowerCase().includes('test') || 
-        f.name.toLowerCase().includes('exam')
-      );
-      const responseFiles = files.filter(f => 
-        f.name.toLowerCase().includes('response') || 
-        f.name.toLowerCase().includes('result') || 
-        f.name.toLowerCase().includes('answer')
-      );
+      // Categorize files (more flexible categorization)
+      // If we have multiple files, try to categorize them
+      let lessonFiles: typeof files = [];
+      let assessmentFiles: typeof files = [];
+      let responseFiles: typeof files = [];
       
+      if (files.length > 1) {
+        // First try to categorize based on naming patterns
+        lessonFiles = files.filter(f => 
+          f.name.toLowerCase().includes('lesson') || 
+          f.name.toLowerCase().includes('slide') || 
+          f.name.toLowerCase().includes('ppt') ||
+          f.name.toLowerCase().includes('curriculum')
+        );
+        
+        assessmentFiles = files.filter(f => 
+          f.name.toLowerCase().includes('assessment') || 
+          f.name.toLowerCase().includes('test') || 
+          f.name.toLowerCase().includes('exam') ||
+          f.name.toLowerCase().includes('quiz')
+        );
+        
+        responseFiles = files.filter(f => 
+          f.name.toLowerCase().includes('response') || 
+          f.name.toLowerCase().includes('result') || 
+          f.name.toLowerCase().includes('answer') ||
+          f.name.toLowerCase().includes('student')
+        );
+      }
+      
+      // If we still don't have proper categorization and have multiple files
+      if (files.length > 1 && (lessonFiles.length === 0 || assessmentFiles.length === 0)) {
+        // Use file types as a fallback for categorization (common document vs spreadsheet distinction)
+        const docTypes = ['doc', 'docx', 'pdf', 'ppt', 'pptx'];
+        const spreadsheetTypes = ['xls', 'xlsx', 'csv'];
+        
+        if (lessonFiles.length === 0) {
+          // Assume documents are lesson materials
+          lessonFiles = files.filter(f => {
+            const ext = f.name.split('.').pop()?.toLowerCase() || '';
+            return docTypes.includes(ext);
+          });
+        }
+        
+        if (assessmentFiles.length === 0) {
+          // If no assessment files found yet, use remaining files that aren't already categorized
+          const remainingFiles = files.filter(f => 
+            !lessonFiles.some(lf => lf.id === f.id) && 
+            !responseFiles.some(rf => rf.id === f.id)
+          );
+          
+          if (remainingFiles.length > 0) {
+            assessmentFiles = remainingFiles;
+          } else {
+            // Last resort: treat first file as lesson and second as assessment
+            assessmentFiles = [files[1] || files[0]];
+          }
+        }
+      }
+      
+      // If we still have only one file, use it as both lesson and assessment
+      if (files.length === 1) {
+        lessonFiles = files;
+        assessmentFiles = files;
+      }
+      
+      // Let's not block the user if we're missing certain types of files
       if (lessonFiles.length === 0) {
-        return res.status(400).json({ message: 'No lesson files found' });
+        return res.status(400).json({ message: 'No lesson content identified. Please upload lesson slides or materials.' });
       }
       
-      if (assessmentFiles.length === 0) {
-        return res.status(400).json({ message: 'No assessment files found' });
-      }
-      
-      if (responseFiles.length === 0) {
-        return res.status(400).json({ message: 'No student response files found' });
-      }
+      // Student response files are optional - use empty string if none are found
+      const studentResponsesContent = responseFiles.length > 0 
+        ? responseFiles.map(f => f.content).join('\n\n')
+        : "No student response data provided.";
       
       // Prepare data for analysis
       const analysisRequest = {
@@ -213,7 +264,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         unitOfStudy,
         lessonContents: lessonFiles.map(f => f.content),
         assessmentContent: assessmentFiles.map(f => f.content).join('\n\n'),
-        studentResponses: responseFiles.map(f => f.content).join('\n\n')
+        studentResponses: studentResponsesContent
       };
       
       // Analyze curriculum
