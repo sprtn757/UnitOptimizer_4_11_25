@@ -106,8 +106,21 @@ export function SelectionForm({ onSelectionChange }: SelectionFormProps) {
   // Update unit options when subject area changes
   useEffect(() => {
     if (subjectArea) {
-      setUnitOptions(UNITS_BY_SUBJECT[subjectArea] || []);
-      setUnitOfStudy(""); // Reset unit selection
+      // Log to help debug
+      console.log('Subject area changed to:', subjectArea);
+      console.log('Available units:', UNITS_BY_SUBJECT[subjectArea]);
+      
+      // Make sure we have units for this subject area
+      const units = UNITS_BY_SUBJECT[subjectArea];
+      if (units && units.length > 0) {
+        setUnitOptions(units);
+      } else {
+        console.warn(`No units found for subject area: ${subjectArea}`);
+        setUnitOptions([]);
+      }
+      
+      // Reset unit selection
+      setUnitOfStudy("");
     } else {
       setUnitOptions([]);
       setUnitOfStudy("");
@@ -167,16 +180,30 @@ export function SelectionForm({ onSelectionChange }: SelectionFormProps) {
         <Label htmlFor="unit-study" className="block text-sm font-medium text-neutral-700 mb-1">
           Unit of Study
         </Label>
-        <Select value={unitOfStudy} onValueChange={setUnitOfStudy} disabled={!subjectArea}>
+        <Select 
+          value={unitOfStudy} 
+          onValueChange={setUnitOfStudy} 
+          disabled={!subjectArea || unitOptions.length === 0}
+        >
           <SelectTrigger id="unit-study" className="w-full">
-            <SelectValue placeholder={subjectArea ? "Select unit" : "Please select subject area first"} />
+            <SelectValue placeholder={
+              !subjectArea 
+                ? "Please select subject area first" 
+                : unitOptions.length === 0 
+                ? "No units available for this subject" 
+                : "Select unit"
+            } />
           </SelectTrigger>
           <SelectContent>
-            {unitOptions.map((unit) => (
-              <SelectItem key={unit.value} value={unit.value}>
-                {unit.label}
-              </SelectItem>
-            ))}
+            {unitOptions.length > 0 ? (
+              unitOptions.map((unit) => (
+                <SelectItem key={unit.value} value={unit.value}>
+                  {unit.label}
+                </SelectItem>
+              ))
+            ) : (
+              <SelectItem value="no-units" disabled>No units available</SelectItem>
+            )}
           </SelectContent>
         </Select>
       </div>
