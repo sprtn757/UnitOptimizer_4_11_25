@@ -36,7 +36,7 @@ interface SelectionFormProps {
   }) => void;
 }
 
-export function SelectionForm({ onSelectionChange }: SelectionFormProps) {
+const SelectionFormBase = ({ onSelectionChange }: SelectionFormProps) => {
   const [gradeLevel, setGradeLevel] = useState<string>("");
   const [subjectArea, setSubjectArea] = useState<string>("");
   const isMobile = useIsMobile();
@@ -125,4 +125,7 @@ export function SelectionForm({ onSelectionChange }: SelectionFormProps) {
       </div>
     </div>
   );
-}
+};
+
+// Export memoized version to prevent unnecessary re-renders
+export const SelectionForm = memo(SelectionFormBase);
