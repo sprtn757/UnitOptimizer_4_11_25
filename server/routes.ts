@@ -294,13 +294,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Processing ${lessonFiles.length} lesson files, ${assessmentFiles.length} assessment files, ${responseFiles.length} response files`);
       
+      // Import compression function
+      const { compressText } = require('./fileProcessing');
+      
+      // Apply compression to reduce token usage
+      const compressedLessonContents = lessonFiles.map(f => {
+        const originalSize = f.content.length;
+        const compressed = compressText(f.content);
+        const newSize = compressed.length;
+        const reductionPercent = ((originalSize - newSize) / originalSize * 100).toFixed(1);
+        console.log(`Compressed lesson file from ${(originalSize/1024).toFixed(1)}KB to ${(newSize/1024).toFixed(1)}KB (${reductionPercent}% reduction)`);
+        return compressed;
+      });
+      
+      // Apply compression to assessment content if it exists
+      const compressedAssessmentContent = assessmentContent ? 
+        compressText(assessmentContent) : assessmentContent;
+      
+      // Compression isn't as necessary for student responses, which are typically smaller
+      
       // Prepare data for analysis
       const analysisRequest = {
         gradeLevel,
         subjectArea,
         unitOfStudy,
-        lessonContents: lessonFiles.map(f => f.content),
-        assessmentContent: assessmentContent,
+        lessonContents: compressedLessonContents,
+        assessmentContent: compressedAssessmentContent,
         studentResponses: studentResponsesContent
       };
       

@@ -37,6 +37,63 @@ function chunkText(text: string, chunkSize = 1024 * 1024): string {
 }
 
 /**
+ * Compresses text by removing redundant whitespace, duplicate paragraphs,
+ * and extracting key content to reduce token count
+ * @param text Text to compress
+ * @returns Compressed text
+ */
+export function compressText(text: string): string {
+  // Step 1: Normalize whitespace and line endings
+  let compressed = text.replace(/\r\n/g, '\n')
+                      .replace(/\s+/g, ' ')
+                      .replace(/\n\s+/g, '\n')
+                      .replace(/\n{3,}/g, '\n\n');
+  
+  // Step 2: Remove duplicate paragraphs (common in slides)
+  const paragraphs = compressed.split('\n\n');
+  const uniqueParagraphs = new Set<string>();
+  const filteredParagraphs: string[] = [];
+  
+  for (const paragraph of paragraphs) {
+    // Skip very short paragraphs (likely headers/footers)
+    if (paragraph.length < 10) continue;
+    
+    // Skip exact duplicates
+    if (uniqueParagraphs.has(paragraph)) continue;
+    
+    uniqueParagraphs.add(paragraph);
+    filteredParagraphs.push(paragraph);
+  }
+  
+  // Step 3: Extract key content
+  // Focus on paragraphs with educational keywords
+  const keyParagraphs = filteredParagraphs.filter(p => {
+    const lowercase = p.toLowerCase();
+    return (
+      // Keep paragraphs likely to contain actual lesson content
+      lowercase.includes('standard') ||
+      lowercase.includes('objective') ||
+      lowercase.includes('learn') ||
+      lowercase.includes('student') ||
+      lowercase.includes('assessment') ||
+      lowercase.includes('skill') ||
+      lowercase.includes('concept') ||
+      lowercase.includes('understand') ||
+      lowercase.includes('analyze') ||
+      lowercase.includes('evaluate') ||
+      // Keep longer paragraphs (likely to be main content)
+      p.length > 100
+    );
+  });
+  
+  // If we have too few key paragraphs, use all filtered paragraphs instead
+  const finalParagraphs = keyParagraphs.length < 5 ? filteredParagraphs : keyParagraphs;
+  
+  // Create a compressed text with a reasonable size limit
+  return finalParagraphs.join('\n\n');
+}
+
+/**
  * Extract text content from various file formats
  * Optimized for handling large files
  */

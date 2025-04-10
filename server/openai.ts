@@ -158,8 +158,8 @@ async function analyzeLessonsInChunks(
   }> = {};
   
   // Process lessons in chunks with a maximum lesson count per chunk
-  // Reducing from 3 to 2 to stay within token limits
-  const MAX_LESSONS_PER_CHUNK = 2;
+  // Further reducing to 1 lesson per chunk for greater reliability
+  const MAX_LESSONS_PER_CHUNK = 1;
   
   for (let i = 0; i < lessons.length; i += MAX_LESSONS_PER_CHUNK) {
     const lessonChunk = lessons.slice(i, i + MAX_LESSONS_PER_CHUNK);
@@ -168,8 +168,8 @@ async function analyzeLessonsInChunks(
     console.log(`Processing lesson chunk ${Math.floor(i / MAX_LESSONS_PER_CHUNK) + 1} of ${Math.ceil(lessons.length / MAX_LESSONS_PER_CHUNK)}`);
     
     // Verify token count isn't too large - truncate if necessary
-    // Estimated max token size is about 15,000 tokens to stay safely under 30,000 TPM limit
-    const MAX_CONTENT_TOKENS = 15000;
+    // Using a more conservative estimated max token size of 10,000 tokens to stay well under 30,000 TPM limit
+    const MAX_CONTENT_TOKENS = 10000;
     const estimatedTokens = estimateTokenCount(lessonContent);
     let processedLessonContent = lessonContent;
     
@@ -180,17 +180,37 @@ async function analyzeLessonsInChunks(
       let truncatedContent = '';
       let currentTokenCount = 0;
       
-      for (const paragraph of paragraphs) {
-        const paragraphTokens = estimateTokenCount(paragraph);
-        if (currentTokenCount + paragraphTokens > MAX_CONTENT_TOKENS) {
-          break;
+      // Extract educational keywords to help the AI understand what to look for
+      const educationalKeywords = [
+        'objective', 'standard', 'learn', 'skill', 'concept', 'assessment',
+        'understanding', 'knowledge', 'analyze', 'evaluate', 'apply'
+      ];
+      
+      // First add key paragraph patterns that are most important (objectives, standards)
+      paragraphs.forEach(paragraph => {
+        const lowerPara = paragraph.toLowerCase();
+        // Keep paragraphs with learning objectives and standards regardless of size
+        if (educationalKeywords.some(keyword => lowerPara.includes(keyword)) && 
+            currentTokenCount + estimateTokenCount(paragraph) <= MAX_CONTENT_TOKENS) {
+          truncatedContent += (truncatedContent ? '\n\n' : '') + paragraph;
+          currentTokenCount += estimateTokenCount(paragraph);
         }
-        truncatedContent += (truncatedContent ? '\n\n' : '') + paragraph;
-        currentTokenCount += paragraphTokens;
-      }
+      });
+      
+      // Then add other paragraphs until we reach the limit
+      paragraphs.forEach(paragraph => {
+        // Skip very short or already added paragraphs
+        if (paragraph.length < 30 || truncatedContent.includes(paragraph)) return;
+        
+        const paragraphTokens = estimateTokenCount(paragraph);
+        if (currentTokenCount + paragraphTokens <= MAX_CONTENT_TOKENS) {
+          truncatedContent += (truncatedContent ? '\n\n' : '') + paragraph;
+          currentTokenCount += paragraphTokens;
+        }
+      });
       
       processedLessonContent = truncatedContent;
-      console.log(`Truncated to approximately ${currentTokenCount} tokens`);
+      console.log(`Truncated to approximately ${currentTokenCount} tokens (${Math.round(currentTokenCount/estimatedTokens*100)}% of original)`);
     }
     
     // Add a delay between chunks to avoid hitting the TPM limit
