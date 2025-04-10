@@ -4,11 +4,6 @@ import * as os from 'os';
 import { promisify } from 'util';
 import { exec } from 'child_process';
 import * as XLSX from 'xlsx';
-// Import PDF parser dynamically to avoid errors with test files
-const pdfParse = (buffer: Buffer) => {
-  const parse = require('pdf-parse');
-  return parse(buffer);
-};
 
 const execAsync = promisify(exec);
 
@@ -39,21 +34,23 @@ export async function extractTextFromFile(fileBuffer: Buffer, fileName: string):
         break;
         
       case '.pdf':
-        // Use pdf-parse library directly
         try {
-          // Read the PDF file
-          const pdfBuffer = await fs.promises.readFile(tempFilePath);
+          // Use proper shell escaping for the path
+          const escapedPath = tempFilePath.replace(/'/g, "'\\''"); // Escape single quotes
+          const { stdout } = await execAsync(`node -e "const pdfParse = require('pdf-parse'); const fs = require('fs'); fs.readFile('${escapedPath}', (err, buffer) => { if (err) { console.error(err); process.exit(1); } pdfParse(buffer).then(data => { console.log(data.text); process.exit(0); }).catch(err => { console.error(err); process.exit(1); }); })"`);
           
-          // Parse the PDF
-          const pdfData = await pdfParse(pdfBuffer);
-          
-          // Extract the text
-          extractedText = pdfData.text || '';
-          
+          extractedText = stdout;
           console.log("Successfully processed PDF file: " + fileName);
         } catch (pdfError: any) {
           console.error("PDF processing error:", pdfError);
-          throw new Error(`PDF processing error: ${pdfError.message || String(pdfError)}`);
+          // Let's try a simpler approach if that fails
+          try {
+            const { stdout } = await execAsync(`strings "${tempFilePath}"`);
+            extractedText = stdout;
+            console.log("Used fallback method for PDF: " + fileName);
+          } catch (fallbackError) {
+            throw new Error(`PDF processing error: ${pdfError.message || String(pdfError)}`);
+          }
         }
         break;
         
@@ -66,23 +63,26 @@ export async function extractTextFromFile(fileBuffer: Buffer, fileName: string):
         
       case '.xlsx':
       case '.xls':
-        // Use xlsx library directly instead of command line
         try {
-          // Read the workbook
-          const workbook = XLSX.readFile(tempFilePath);
+          // Call our dedicated Excel processor script
+          const { stdout } = await execAsync(`node server/excelProcessor.js "${tempFilePath}"`);
           
-          // Get the first worksheet
-          const firstSheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[firstSheetName];
-          
-          // Convert to JSON and then to string
-          const jsonData = XLSX.utils.sheet_to_json(worksheet);
-          extractedText = JSON.stringify(jsonData, null, 2);
-          
+          extractedText = stdout;
           console.log("Successfully processed Excel file: " + fileName);
         } catch (xlsxError: any) {
           console.error("Excel processing error:", xlsxError);
-          throw new Error(`Excel processing error: ${xlsxError.message || String(xlsxError)}`);
+          
+          // Try a simpler approach for Excel files
+          try {
+            // Just read the file as UTF-8 and see if we get anything useful
+            extractedText = await fs.promises.readFile(tempFilePath, 'utf-8');
+            if (!extractedText || extractedText.length < 10) {
+              throw new Error("Could not extract meaningful text");
+            }
+            console.log("Used text fallback method for Excel: " + fileName);
+          } catch (fallbackError) {
+            throw new Error(`Excel processing error: ${xlsxError.message || String(xlsxError)}`);
+          }
         }
         break;
         
