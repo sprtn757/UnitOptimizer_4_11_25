@@ -20,8 +20,8 @@ import * as os from 'os';
 const upload = multer({ 
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 20 * 1024 * 1024, // 20MB limit
-    files: 10 // Maximum 10 files
+    fileSize: 50 * 1024 * 1024, // 50MB limit
+    files: 25 // Maximum 25 files
   }
 });
 
@@ -87,7 +87,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Upload files
-  app.post('/api/upload', upload.array('files', 10), async (req: Request, res: Response) => {
+  app.post('/api/upload', upload.array('files', 25), async (req: Request, res: Response) => {
     try {
       const files = (req as RequestWithFiles).files;
       if (!files || !Array.isArray(files) || files.length === 0) {

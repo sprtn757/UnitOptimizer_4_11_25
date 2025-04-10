@@ -151,12 +151,12 @@ export function FileUploader({ onFilesUploaded }: FileUploaderProps) {
       return;
     }
     
-    // Check file size (20MB max)
-    const oversizedFiles = acceptedFiles.filter(file => file.size > 20 * 1024 * 1024);
+    // Check file size (50MB max)
+    const oversizedFiles = acceptedFiles.filter(file => file.size > 50 * 1024 * 1024);
     if (oversizedFiles.length > 0) {
       toast({
         title: "Files Too Large",
-        description: `Files must be smaller than 20MB.`,
+        description: `Files must be smaller than 50MB.`,
         variant: "destructive"
       });
       return;
@@ -168,8 +168,8 @@ export function FileUploader({ onFilesUploaded }: FileUploaderProps) {
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    maxFiles: 10,
-    maxSize: 20 * 1024 * 1024 // 20MB
+    maxFiles: 25,
+    maxSize: 50 * 1024 * 1024 // 50MB
   });
 
   const handleBrowseClick = () => {
@@ -214,7 +214,7 @@ export function FileUploader({ onFilesUploaded }: FileUploaderProps) {
             Browse Files
           </Button>
           <p className="text-neutral-500 text-xs md:text-sm mt-2 md:mt-3">
-            Maximum 10 files, 20MB each
+            Maximum 25 files, 50MB each
           </p>
         </div>
       </div>
