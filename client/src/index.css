@@ -32,6 +32,25 @@
 }
 
 @layer components {
+  /* Fix for select elements to ensure they scroll properly and show dropdown arrow */
+  .native-select {
+    -webkit-appearance: menulist !important;
+    appearance: menulist !important;
+    background-color: #fff !important;
+    background-image: none !important;
+    background-position: right 0.5rem center !important;
+    background-repeat: no-repeat !important;
+    background-size: 1.5em 1.5em !important;
+    padding-right: 2.5rem !important;
+    text-transform: none !important;
+  }
+  
+  /* Make sure select options are visible and selectable */
+  .native-select option {
+    background-color: white;
+    color: black;
+  }
+  
   .layout-contained {
     max-width: 1200px;
     margin: 0 auto;

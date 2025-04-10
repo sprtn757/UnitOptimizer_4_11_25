@@ -193,19 +193,19 @@ export function FileUploader({ onFilesUploaded }: FileUploaderProps) {
       <div 
         {...getRootProps()} 
         className={cn(
-          "border-2 border-dashed border-neutral-300 rounded-lg p-8 text-center hover:bg-neutral-50 transition-colors duration-200 mb-4",
+          "border-2 border-dashed border-neutral-300 rounded-lg p-4 md:p-8 text-center hover:bg-neutral-50 transition-colors duration-200 mb-4",
           isDragActive && "border-primary bg-primary-light/5"
         )}
       >
         <input {...getInputProps()} ref={fileInputRef} />
         <div className="flex flex-col items-center justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-neutral-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 md:h-12 md:w-12 text-neutral-400 mb-2 md:mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
           </svg>
-          <p className="text-neutral-600 font-medium mb-1">Drag & drop files here or</p>
+          <p className="text-neutral-600 font-medium mb-1 text-sm md:text-base">Drag & drop files here or</p>
           <Button
             variant="default"
-            className="bg-primary-light hover:bg-primary"
+            className="bg-primary-light hover:bg-primary text-sm md:text-base"
             onClick={(e) => {
               e.stopPropagation();
               handleBrowseClick();
@@ -213,7 +213,7 @@ export function FileUploader({ onFilesUploaded }: FileUploaderProps) {
           >
             Browse Files
           </Button>
-          <p className="text-neutral-500 text-sm mt-3">
+          <p className="text-neutral-500 text-xs md:text-sm mt-2 md:mt-3">
             Maximum 10 files, 20MB each
           </p>
         </div>
@@ -223,19 +223,20 @@ export function FileUploader({ onFilesUploaded }: FileUploaderProps) {
       {files.length > 0 && (
         <div id="file-list" className="space-y-2 mt-4">
           {files.map((file) => (
-            <div key={file.id} className="bg-neutral-50 border border-neutral-200 rounded-md p-3 flex items-center justify-between">
-              <div className="flex items-center space-x-3">
+            <div key={file.id} className="bg-neutral-50 border border-neutral-200 rounded-md p-2 md:p-3 flex items-center justify-between">
+              <div className="flex items-center space-x-2 md:space-x-3 flex-1 min-w-0">
                 {getFileIcon(file.type)}
-                <div>
-                  <p className="text-sm font-medium">{file.name}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs md:text-sm font-medium truncate">{file.name}</p>
                   <p className="text-xs text-neutral-500">{humanFileSize(file.size)} • {getFileTypeLabel(file.type)}</p>
                 </div>
               </div>
               <button 
-                className="text-neutral-400 hover:text-neutral-600"
+                className="text-neutral-400 hover:text-neutral-600 flex-shrink-0 ml-2"
                 onClick={() => handleRemoveFile(file.id)}
+                aria-label="Remove file"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 md:h-5 md:w-5" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
               </button>

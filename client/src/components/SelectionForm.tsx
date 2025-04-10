@@ -168,8 +168,7 @@ export function SelectionForm({ onSelectionChange }: SelectionFormProps) {
           id="grade-level" 
           value={gradeLevel} 
           onChange={handleGradeLevelChange}
-          style={{WebkitAppearance: 'menulist', appearance: 'menulist'}}
-          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          className="native-select w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
         >
           <option value="" disabled>Select grade</option>
           {GRADE_LEVELS.map((grade) => (
@@ -188,7 +187,7 @@ export function SelectionForm({ onSelectionChange }: SelectionFormProps) {
           id="subject-area" 
           value={subjectArea} 
           onChange={handleSubjectAreaChange}
-          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          className="native-select w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
         >
           <option value="" disabled>Select subject</option>
           {SUBJECT_AREAS.map((subject) => (
@@ -208,7 +207,7 @@ export function SelectionForm({ onSelectionChange }: SelectionFormProps) {
           value={unitOfStudy} 
           onChange={handleUnitChange}
           disabled={!subjectArea || unitOptions.length === 0}
-          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          className="native-select w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <option value="" disabled>
             {!subjectArea 
