@@ -16,12 +16,15 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 
-// Set up multer for file uploads
+// Set up multer for file uploads with increased limits
 const upload = multer({ 
   storage: multer.memoryStorage(),
   limits: {
     fileSize: 50 * 1024 * 1024, // 50MB limit
-    files: 30 // Maximum 30 files
+    files: 30, // Maximum 30 files
+    fieldSize: 50 * 1024 * 1024, // 50MB field size limit
+    fieldNameSize: 100, // Longer field names
+    parts: 100 // More parts in multipart requests
   }
 });
 
