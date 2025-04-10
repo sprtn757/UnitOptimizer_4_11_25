@@ -94,15 +94,15 @@ export function Sidebar({ className, isMobileOpen = false, onMobileClose }: Side
           </div>
         </div>
 
-        <ScrollArea className="h-screen pb-32">
+        <div className="overflow-y-auto h-[calc(100vh-64px)]">
           <div className="p-4">
             <p className="text-xs uppercase font-semibold text-neutral-500 mb-2">Menu</p>
             <nav className="space-y-1">
               {menuItems.map((item) => (
                 <Link key={item.href} href={item.href}>
-                  <a
+                  <div
                     className={cn(
-                      "flex items-center space-x-2 p-2 rounded-lg transition-colors",
+                      "flex items-center space-x-2 p-2 rounded-lg transition-colors cursor-pointer",
                       item.isActive
                         ? "bg-primary-light/10 text-primary font-medium"
                         : "text-neutral-600 hover:bg-neutral-100"
@@ -111,7 +111,7 @@ export function Sidebar({ className, isMobileOpen = false, onMobileClose }: Side
                   >
                     {item.icon}
                     <span>{item.label}</span>
-                  </a>
+                  </div>
                 </Link>
               ))}
             </nav>
@@ -122,18 +122,18 @@ export function Sidebar({ className, isMobileOpen = false, onMobileClose }: Side
             <nav className="space-y-1">
               {recentProjects.map((project) => (
                 <Link key={project.id} href={`/project/${project.id}`}>
-                  <a
-                    className="flex items-center space-x-2 p-2 rounded-lg text-neutral-600 hover:bg-neutral-100"
+                  <div
+                    className="flex items-center space-x-2 p-2 rounded-lg text-neutral-600 hover:bg-neutral-100 cursor-pointer"
                     onClick={isMobileOpen ? onMobileClose : undefined}
                   >
                     <span className={`w-2 h-2 rounded-full ${project.color}`} />
                     <span className="text-sm truncate">{project.name}</span>
-                  </a>
+                  </div>
                 </Link>
               ))}
             </nav>
           </div>
-        </ScrollArea>
+        </div>
       </aside>
 
       {/* Mobile overlay */}
