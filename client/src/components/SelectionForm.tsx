@@ -148,7 +148,7 @@ export function SelectionForm({ onSelectionChange }: SelectionFormProps) {
           <SelectTrigger id="grade-level" className="w-full">
             <SelectValue placeholder="Select grade" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent position="popper" className="max-h-[200px] overflow-y-auto">
             {GRADE_LEVELS.map((grade) => (
               <SelectItem key={grade.value} value={grade.value}>
                 {grade.label}
@@ -166,7 +166,7 @@ export function SelectionForm({ onSelectionChange }: SelectionFormProps) {
           <SelectTrigger id="subject-area" className="w-full">
             <SelectValue placeholder="Select subject" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent position="popper" className="max-h-[200px] overflow-y-auto">
             {SUBJECT_AREAS.map((subject) => (
               <SelectItem key={subject.value} value={subject.value}>
                 {subject.label}
@@ -194,7 +194,7 @@ export function SelectionForm({ onSelectionChange }: SelectionFormProps) {
                 : "Select unit"
             } />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent position="popper" className="max-h-[200px] overflow-y-auto scrollbar-thin">
             {unitOptions.length > 0 ? (
               unitOptions.map((unit) => (
                 <SelectItem key={unit.value} value={unit.value}>
